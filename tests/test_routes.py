@@ -25,10 +25,12 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models import db, Recommendation
+from .factories import RecommendationFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
+BASE_URL = "/recommendations"
 
 
 ######################################################################
@@ -72,4 +74,31 @@ class TestYourResourceService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
+    # ----------------------------------------------------------
+    # TEST CREATE
+    # ----------------------------------------------------------
+    def test_create_recommendation(self):
+        """It should Create a new Recommendation"""
+        test_recommendation = RecommendationFactory()
+        logging.debug("Test Recommendation: %s", test_recommendation.serialize())
+        response = self.client.post(BASE_URL, json=test_recommendation.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Make sure location header is set
+        location = response.headers.get("Location", None)
+        self.assertIsNotNone(location)
+
+        # Check the data is correct
+        new_recommendation = response.get_json()
+        self.assertEqual(new_recommendation["name"], test_recommendation.name)
+        self.assertEqual(new_recommendation["address"], test_recommendation.address)
+        self.assertEqual(new_recommendation["email"], test_recommendation.email)
+
+        # TODO: Uncomment the following test when get_recommendations is implemented.
+        # Check that the location header was correct
+        # response = self.client.get(location)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # new_recommendation = response.get_json()
+        # self.assertEqual(new_recommendation["name"], test_recommendation.name)
+        # self.assertEqual(new_recommendation["address"], test_recommendation.address)
+        # self.assertEqual(new_recommendation["email"], test_recommendation.email)
