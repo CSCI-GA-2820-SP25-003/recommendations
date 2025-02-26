@@ -19,5 +19,4 @@ class RecommendationFactory(factory.Factory):
     address = factory.Faker("address")
     email = factory.Faker("email")
 
-
     # Todo: Add your other attributes here...
