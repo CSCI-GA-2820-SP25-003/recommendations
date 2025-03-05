@@ -80,3 +80,49 @@ class TestRecommendation(TestCase):
         self.assertEqual(data.rec_success, recommendation.rec_success)
 
     # Todo: Add your test cases here...
+    
+    # ----------------------------------------------------------
+    # TEST UPDATE RECOMMENDATION
+    # ----------------------------------------------------------
+    def test_update_a_recommendation(self):
+        """It should Update a Recommendation"""
+        recommendation = RecommendationFactory()
+        logging.debug(recommendation)
+        recommendation.id = None
+        recommendation.create()
+        logging.debug(recommendation)
+        self.assertIsNotNone(recommendation.id)
+        # Change it an save it
+        recommendation.category = "k9"
+        original_id = recommendation.id
+        recommendation.update()
+        self.assertEqual(recommendation.id, original_id)
+        self.assertEqual(recommendation.category, "k9")
+        # Fetch it back and make sure the id hasn't changed
+        # but the data did change
+        recommendations = Recommendation.all()
+        self.assertEqual(len(recommendations), 1)
+        self.assertEqual(recommendations[0].id, original_id)
+        self.assertEqual(recommendations[0].category, "k9")
+
+    # def test_update_no_id(self):
+    #     """It should not Update a Recommendation with no id"""
+    #     recommendation = RecommendationFactory()
+    #     logging.debug(recommendation)
+    #     recommendation.id = None
+    #     self.assertRaises(DataValidationError, recommendation.update)
+
+
+
+
+    # ----------------------------------------------------------
+    # TEST DELETE RECOMMENDATION
+    # ----------------------------------------------------------
+    def test_delete_a_recommendation(self):
+        """It should Delete a Recommendation"""
+        recommendation = RecommendationFactory()
+        recommendation.create()
+        self.assertEqual(len(Recommendation.all()), 1)
+        # delete the recommendation and make sure it isn't in the database
+        recommendation.delete()
+        self.assertEqual(len(Recommendation.all()), 0)

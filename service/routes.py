@@ -160,6 +160,88 @@ def get_recommendations(recommendation_id):
 ######################################################################
 # UPDATE A RECOMMENDATION
 ######################################################################
+
+
+@app.route("/recommendations/<int:recommendations_id>", methods=["PUT"])
+def update_recommendations(recommendations_id):
+    """
+    Update a Recommendation
+    This endpoint will update a Recommendation based the body that is posted
+    """
+    app.logger.info("Request to update recommendations with id: %d", recommendations_id)
+    check_content_type("application/json")
+
+    recommendations = Recommendation.find(recommendations_id)
+    if not recommendations:
+        error(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id: '{recommendations_id}' was not found.",
+        )
+
+    recommendations.deserialize(request.get_json())
+    recommendations.id = recommendations_id
+    recommendations.update()
+
+    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
+    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+
+
+    ######################################################################
+    # LINK AN RECOMMENDATION ID TO A EXISTING PRODUCT
+    ######################################################################
+@app.route(
+    "/recommendations/<int:product_id>/<int:recommendations_id>", methods=["PUT"]
+)
+def update_recommendations_id(product_id, recommendations_id):
+    """
+    Link a recommendation id to an existing product
+    This endpoint will lina a recommendation id to a product.
+    """
+    app.logger.info("Request to update recommendations with id: %d", product_id)
+    check_content_type("application/json")
+
+    recommendations = Recommendation.find(product_id)
+    if not recommendations:
+        error(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id: '{product_id}' was not found.",
+        )
+
+    recommendations.deserialize(request.get_json())
+    recommendations.recommendation_id = recommendations_id
+    recommendations.update()
+
+    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
+    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+
+
+    ######################################################################
+    # LINK AN RECOMMENDATION NAME TO A EXISTING PRODUCT
+    ######################################################################
+@app.route("/recommendations/<int:product_id>/<name>", methods=["PUT"])
+def update_recommendations_name(product_id, name):
+    """
+    Link a recommendation name to an existing product
+    This endpoint will lina a recommendation name to a product.
+    """
+    app.logger.info("Request to update recommendations with id: %d", product_id)
+    check_content_type("application/json")
+
+    recommendations = Recommendation.find(product_id)
+    if not recommendations:
+        error(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id: '{product_id}' was not found.",
+        )
+
+    recommendations.deserialize(request.get_json())
+    recommendations.recommendation_name = name
+    recommendations.update()
+
+    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
+    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+
+
 ######################################################################
 #  DELETE A RECOMMENDATION
 ######################################################################
@@ -200,3 +282,12 @@ def check_content_type(content_type) -> None:
         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         f"Content-Type must be {content_type}",
     )
+
+
+######################################################################
+# Logs error messages before aborting
+######################################################################
+def error(status_code, reason):
+    """Logs the error and then aborts"""
+    app.logger.error(reason)
+    abort(status_code, reason)
