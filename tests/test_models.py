@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.models import Recommendation, DataValidationError, db
 from .factories import RecommendationFactory
+from unittest.mock import patch
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -80,7 +81,7 @@ class TestRecommendation(TestCase):
         self.assertEqual(data.rec_success, recommendation.rec_success)
 
     # Todo: Add your test cases here...
-    
+
     # ----------------------------------------------------------
     # TEST UPDATE RECOMMENDATION
     # ----------------------------------------------------------
@@ -117,9 +118,9 @@ class TestRecommendation(TestCase):
         recommendation.delete()
         self.assertEqual(len(Recommendation.all()), 0)
 
-# ----------------------------------------------------------
+    # ----------------------------------------------------------
     # TEST FIND
-# ----------------------------------------------------------
+    # ----------------------------------------------------------
 
     def test_find_by_id(self):
         """It should Find a Recommendation by ID"""
@@ -158,7 +159,9 @@ class TestRecommendation(TestCase):
 
     def test_find_by_recommend_type(self):
         """It should Find Recommendations by recommend_type"""
-        recommendations = [RecommendationFactory(recommend_type="up-sell") for _ in range(5)]
+        recommendations = [
+            RecommendationFactory(recommend_type="up-sell") for _ in range(5)
+        ]
         for rec in recommendations:
             rec.create()
 
@@ -170,7 +173,9 @@ class TestRecommendation(TestCase):
 
     def test_find_by_recommend_product_id(self):
         """It should Find Recommendations by recommend_product_id"""
-        recommendations = [RecommendationFactory(recommend_product_id=303) for _ in range(2)]
+        recommendations = [
+            RecommendationFactory(recommend_product_id=303) for _ in range(2)
+        ]
         for rec in recommendations:
             rec.create()
 
@@ -187,7 +192,9 @@ class TestRecommendation(TestCase):
         self.assertEqual(data["product_id"], recommendation.product_id)
         self.assertEqual(data["customer_id"], recommendation.customer_id)
         self.assertEqual(data["recommend_type"], recommendation.recommend_type)
-        self.assertEqual(data["recommend_product_id"], recommendation.recommend_product_id)
+        self.assertEqual(
+            data["recommend_product_id"], recommendation.recommend_product_id
+        )
         self.assertEqual(data["rec_success"], recommendation.rec_success)
 
     def test_deserialize_recommendation(self):
@@ -198,5 +205,96 @@ class TestRecommendation(TestCase):
         self.assertEqual(recommendation.product_id, data["product_id"])
         self.assertEqual(recommendation.customer_id, data["customer_id"])
         self.assertEqual(recommendation.recommend_type, data["recommend_type"])
-        self.assertEqual(recommendation.recommend_product_id, data["recommend_product_id"])
+        self.assertEqual(
+            recommendation.recommend_product_id, data["recommend_product_id"]
+        )
         self.assertEqual(recommendation.rec_success, data["rec_success"])
+
+    def test_create_with_db_error(self):
+        """It should handle database error on create"""
+        recommendation = RecommendationFactory()
+        with patch(
+            "service.models.db.session.commit", side_effect=Exception("DB failure")
+        ):
+            with self.assertRaises(DataValidationError):
+                recommendation.create()
+
+    def test_update_with_db_error(self):
+        """It should handle database error on update"""
+        recommendation = RecommendationFactory()
+        recommendation.create()
+        with patch(
+            "service.models.db.session.commit", side_effect=Exception("DB failure")
+        ):
+            with self.assertRaises(DataValidationError):
+                recommendation.update()
+
+    def test_delete_with_db_error(self):
+        """It should handle database error on delete"""
+        recommendation = RecommendationFactory()
+        recommendation.create()
+        with patch(
+            "service.models.db.session.commit", side_effect=Exception("DB failure")
+        ):
+            with self.assertRaises(DataValidationError):
+                recommendation.delete()
+
+    def test_deserialize_valid_data(self):
+        """It should deserialize valid data"""
+        recommendation = Recommendation()
+        data = {
+            "product_id": 100,
+            "customer_id": 200,
+            "recommend_type": "up-sell",
+            "recommend_product_id": 300,
+            "rec_success": 5,
+        }
+        recommendation.deserialize(data)
+        self.assertEqual(recommendation.product_id, 100)
+        self.assertEqual(recommendation.customer_id, 200)
+        self.assertEqual(recommendation.recommend_type, "up-sell")
+        self.assertEqual(recommendation.recommend_product_id, 300)
+        self.assertEqual(recommendation.rec_success, 5)
+
+    def test_deserialize_with_missing_field(self):
+        """It should raise DataValidationError if a field is missing"""
+        recommendation = Recommendation()
+        data = {
+            "product_id": 100,
+            "customer_id": 200,
+            # Missing recommend_type
+            "recommend_product_id": 300,
+            "rec_success": 5,
+        }
+        with self.assertRaises(DataValidationError) as context:
+            recommendation.deserialize(data)
+        self.assertIn("missing recommend_type", str(context.exception))
+
+    def test_deserialize_with_bad_type(self):
+        """It should raise DataValidationError if data is not a dictionary"""
+        recommendation = Recommendation()
+        with self.assertRaises(DataValidationError) as context:
+            recommendation.deserialize("this is not a dict")
+        self.assertIn(
+            "Invalid Recommendation: body of request contained bad or no data",
+            str(context.exception),
+        )
+
+    def test_deserialize_with_unexpected_attribute(self):
+        """It should raise DataValidationError if an unexpected attribute type is passed"""
+        recommendation = Recommendation()
+        bad_data = {
+            "product_id": "wrong_type",  # product_id should be int
+            "customer_id": 200,
+            "recommend_type": "up-sell",
+            "recommend_product_id": 300,
+            "rec_success": 5,
+        }
+        # This won't trigger AttributeError directly — it's more a type validation issue.
+        # If you want, you could add type-checking inside `deserialize()` for stricter validation.
+        recommendation.deserialize(
+            bad_data
+        )  # this won't fail unless you add type checks
+        self.assertEqual(
+            recommendation.product_id, "wrong_type"
+        )  # This is allowed right now

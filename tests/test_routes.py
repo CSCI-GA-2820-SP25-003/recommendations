@@ -157,6 +157,22 @@ class TestRecommendationService(TestCase):
             new_recommendation["rec_success"], test_recommendation.rec_success
         )
 
+    def test_create_recommendation_with_no_content_type(self):
+        """It should fail to create recommendation without Content-Type"""
+        response = self.client.post(BASE_URL, data="{}", content_type=None)
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+        self.assertIn(
+            "Content-Type must be application/json", response.get_data(as_text=True)
+        )
+
+    def test_create_recommendation_with_invalid_content_type(self):
+        """It should fail to create recommendation with wrong Content-Type"""
+        response = self.client.post(BASE_URL, data="{}", content_type="text/plain")
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+        self.assertIn(
+            "Content-Type must be application/json", response.get_data(as_text=True)
+        )
+
     # ----------------------------------------------------------
     # TEST LIST
     # ----------------------------------------------------------
@@ -171,6 +187,11 @@ class TestRecommendationService(TestCase):
         # See if we get back 5 recommendations
         recommendations = Recommendation.all()
         self.assertEqual(len(recommendations), 5)
+
+    def test_list_recommendations_with_invalid_filter(self):
+        """It should ignore unknown query filters"""
+        response = self.client.get(f"{BASE_URL}?unknown=123")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     # ----------------------------------------------------------
     # TEST UPDATE RECOMMENDATION
@@ -201,11 +222,17 @@ class TestRecommendationService(TestCase):
         self.assertEqual(updated_recommendation["rec_success"], 99)
 
         # Ensure the other fields remain unchanged
-        self.assertEqual(updated_recommendation["product_id"], test_recommendation.product_id)
-        self.assertEqual(updated_recommendation["customer_id"], test_recommendation.customer_id)
-        self.assertEqual(updated_recommendation["recommend_product_id"], test_recommendation.recommend_product_id)
+        self.assertEqual(
+            updated_recommendation["product_id"], test_recommendation.product_id
+        )
+        self.assertEqual(
+            updated_recommendation["customer_id"], test_recommendation.customer_id
+        )
+        self.assertEqual(
+            updated_recommendation["recommend_product_id"],
+            test_recommendation.recommend_product_id,
+        )
 
-        
     def test_update_product_id_in_recommendation(self):
         """It should update the product_id for an existing Recommendation"""
         # Create a recommendation to update
@@ -224,11 +251,10 @@ class TestRecommendationService(TestCase):
             f"{BASE_URL}/{new_recommendation['id']}", json=new_recommendation
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         updated_recommendation = response.get_json()
         self.assertEqual(updated_recommendation["product_id"], 9999)
 
-    
     def test_update_recommend_type(self):
         """It should update the recommend_type for an existing Recommendation"""
         # Create a recommendation to update
@@ -251,7 +277,10 @@ class TestRecommendationService(TestCase):
         updated_recommendation = response.get_json()
         self.assertEqual(updated_recommendation["recommend_type"], "up-sell")
 
-
+    def test_update_recommendation_not_found(self):
+        """It should return 404 when updating a non-existent recommendation"""
+        response = self.client.put(f"{BASE_URL}/9999", json={})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # ----------------------------------------------------------
     # TEST DELETE RECOMMENDATION
@@ -264,6 +293,27 @@ class TestRecommendationService(TestCase):
         self.assertEqual(len(response.data), 0)
         # make sure they are deleted
         response = self.client.get(f"{BASE_URL}/{test_recommendation.id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_recommendation_by_product_and_recommended_product(self):
+        """It should delete a recommendation by product_id and recommended_product_id"""
+        recommendation = RecommendationFactory()
+        recommendation.create()
+
+        response = self.client.delete(
+            f"{BASE_URL}/{recommendation.product_id}/{recommendation.recommend_product_id}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Double check it's gone
+        response = self.client.delete(
+            f"{BASE_URL}/{recommendation.product_id}/{recommendation.recommend_product_id}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_recommendation_not_found(self):
+        """It should return 404 when deleting non-existent recommendation"""
+        response = self.client.delete(f"{BASE_URL}/9999/8888")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # ----------------------------------------------------------
@@ -377,3 +427,54 @@ class TestRecommendationService(TestCase):
             self.assertEqual(
                 recommendation["recommend_product_id"], test_recommend_product_id
             )
+
+    # ----------------------------------------------------------
+    # TEST LINK
+    # ----------------------------------------------------------
+
+    def test_link_recommendation_product(self):
+        """It should link a recommendation to a new recommended product"""
+        # Create a recommendation first
+        recommendation = RecommendationFactory()
+        response = self.client.post(BASE_URL, json=recommendation.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Fetch the created recommendation and link to a new product
+        new_recommendation = response.get_json()
+        logging.debug(new_recommendation)
+
+        new_recommend_product_id = new_recommendation["recommend_product_id"] + 999
+
+        link_url = (
+            f"{BASE_URL}/{new_recommendation['id']}/link/{new_recommend_product_id}"
+        )
+
+        response = self.client.put(link_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check that recommend_product_id was updated
+        updated_recommendation = response.get_json()
+        self.assertEqual(
+            updated_recommendation["recommend_product_id"], new_recommend_product_id
+        )
+
+    def test_link_recommendation_not_found(self):
+        """It should return 404 when linking for a non-existent recommendation"""
+        response = self.client.put(f"{BASE_URL}/9999/link/1234")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_with_all_filters(self):
+        """It should handle all filters in list recommendations"""
+        test_recommendation = self._create_recommendations(1)[0]
+        response = self.client.get(
+            BASE_URL,
+            query_string={
+                "product_id": test_recommendation.product_id,
+                "customer_id": test_recommendation.customer_id,
+                "recommend_type": test_recommendation.recommend_type,
+                "recommend_product_id": test_recommendation.recommend_product_id,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 1)
