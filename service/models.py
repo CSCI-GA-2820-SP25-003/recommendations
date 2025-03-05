@@ -14,7 +14,7 @@ db = SQLAlchemy()
 
 
 class DataValidationError(Exception):
-    """Used for an data validation errors when deserializing"""
+    """Used for any data validation errors when deserializing"""
 
 
 class Recommendation(db.Model):
@@ -26,20 +26,21 @@ class Recommendation(db.Model):
     # Table Schema
     ##################################################
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(63))
-    address = db.Column(db.String(256))
-    email = db.Column(db.String(63))
-
-    # Todo: Place the rest of your schema here...
+    product_id = db.Column(db.Integer, nullable=False)
+    customer_id = db.Column(db.Integer, nullable=False)
+    recommend_type = db.Column(db.String(63), nullable=False)
+    recommend_product_id = db.Column(db.Integer, nullable=False)
+    rec_success = db.Column(db.Integer, default=0, nullable=False)
 
     def __repr__(self):
-        return f"<Recommendation {self.name} id=[{self.id}]>"
+        return f"<Recommendation product_id={self.product_id},\
+                recommend_product_id={self.recommend_product_id} id=[{self.id}]>"
 
     def create(self):
         """
         Creates a Recommendation to the database
         """
-        logger.info("Creating %s", self.name)
+        logger.info("Creating recommendation for product_id =%s", self.product_id)
         self.id = None  # pylint: disable=invalid-name
         try:
             db.session.add(self)
@@ -53,7 +54,7 @@ class Recommendation(db.Model):
         """
         Updates a Recommendation to the database
         """
-        logger.info("Saving %s", self.name)
+        logger.info("Saving %s", self.id)
         try:
             db.session.commit()
         except Exception as e:
@@ -63,7 +64,7 @@ class Recommendation(db.Model):
 
     def delete(self):
         """Removes a Recommendation from the data store"""
-        logger.info("Deleting %s", self.name)
+        logger.info("Deleting %s", self.id)
         try:
             db.session.delete(self)
             db.session.commit()
@@ -76,9 +77,11 @@ class Recommendation(db.Model):
         """Serializes a Recommendation into a dictionary"""
         return {
             "id": self.id,
-            "name": self.name,
-            "address": self.address,
-            "email": self.email,
+            "product_id": self.product_id,
+            "customer_id": self.customer_id,
+            "recommend_type": self.recommend_type,
+            "recommend_product_id": self.recommend_product_id,
+            "rec_success": self.rec_success,
         }
 
     def deserialize(self, data):
@@ -89,9 +92,11 @@ class Recommendation(db.Model):
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.name = data["name"]
-            self.address = data["address"]
-            self.email = data["email"]
+            self.product_id = data["product_id"]
+            self.customer_id = data["customer_id"]
+            self.recommend_type = data["recommend_type"]
+            self.recommend_product_id = data["recommend_product_id"]
+            self.rec_success = data["rec_success"]
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
         except KeyError as error:
@@ -117,44 +122,72 @@ class Recommendation(db.Model):
 
     @classmethod
     def find(cls, by_id):
-        """Finds a Recommendation by it's ID"""
-        logger.info("Processing lookup for id %s ...", by_id)
+        """
+        Finds a Recommendation by its ID
+
+        :param by_id: the id of the Recommendation to retrieve
+        :type by_id: int
+
+        :return: the Recommendation with the given id or None if not found
+        :rtype: Recommendation
+        """
+        logger.info("Processing lookup for recommendation id=%s ...", by_id)
         return cls.query.session.get(cls, by_id)
 
     @classmethod
-    def find_by_name(cls, name):
-        """Returns all Recommendations with the given name
-
-        Args:
-            name (string): the name of the Recommendations you want to match
+    def find_by_product_id(cls, product_id: int) -> list:
         """
-        logger.info("Processing name query for %s ...", name)
-        return cls.query.filter(cls.name == name)
+        Finds all Recommendations for a given product_id
+
+        :param product_id: the product_id to search for
+        :type product_id: int
+
+        :return: a list of Recommendations for that product
+        :rtype: list
+        """
+        logger.info("Processing product_id query for %s ...", product_id)
+        return cls.query.filter(cls.product_id == product_id).all()
 
     @classmethod
-    def find_by_address(cls, address: str) -> list:
-        """Returns all of the Recommendations in a address
-
-        :param address: the address of the Recommendations you want to match
-        :type address: str
-
-        :return: a collection of Recommendations in that address
-        :rtype: list
-
+    def find_by_customer_id(cls, customer_id: int) -> list:
         """
-        logger.info("Processing address query for %s ...", address)
-        return cls.query.filter(cls.address == address)
+        Finds all Recommendations for a given customer_id
+
+        :param customer_id: the customer_id to search for
+        :type customer_id: int
+
+        :return: a list of Recommendations for that customer
+        :rtype: list
+        """
+        logger.info("Processing customer_id query for %s ...", customer_id)
+        return cls.query.filter(cls.customer_id == customer_id).all()
 
     @classmethod
-    def find_by_email(cls, email: str) -> list:
-        """Returns all Recommendations by their email
-
-        :param email: the email of the Recommendations you want to match
-        :type available: str
-
-        :return: a collection of Recommendations that are available
-        :rtype: list
-
+    def find_by_recommend_type(cls, recommend_type: str) -> list:
         """
-        logger.info("Processing email query for %s ...", email)
-        return cls.query.filter(cls.email == email)
+        Finds all Recommendations of a given type (e.g., up-sell, cross-sell)
+
+        :param recommend_type: the type of recommendation to search for
+        :type recommend_type: str
+
+        :return: a list of Recommendations with that type
+        :rtype: list
+        """
+        logger.info("Processing recommend_type query for %s ...", recommend_type)
+        return cls.query.filter(cls.recommend_type == recommend_type).all()
+
+    @classmethod
+    def find_by_recommend_product_id(cls, recommend_product_id: int) -> list:
+        """
+        Finds all Recommendations that recommend a specific product
+
+        :param recommend_product_id: the product_id being recommended
+        :type recommend_product_id: int
+
+        :return: a list of Recommendations that recommend this product
+        :rtype: list
+        """
+        logger.info(
+            "Processing recommend_product_id query for %s ...", recommend_product_id
+        )
+        return cls.query.filter(cls.recommend_product_id == recommend_product_id).all()
