@@ -56,6 +56,35 @@ def index():
 ######################################################################
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
+######################################################################
+# DELETE A RECOMMENDATION
+######################################################################
+@app.route("/recommendations/<int:product_id>/<int:recommended_product_id>", methods=["DELETE"])
+def delete_recommendation(product_id, recommended_product_id):
+    """
+    Delete a Recommendation
+
+    This endpoint will delete a Recommendation based on the product_id and recommended_product_id specified in the path.
+    """
+
+    app.logger.info("Request to Delete a recommendation with product_id [%s] and recommended_product_id [%s]", product_id, recommended_product_id)
+
+    # Find the Recommendation in the database
+    recommendation = Recommendation.query.filter_by(
+        product_id=product_id, recommended_product_id=recommended_product_id
+    ).first()
+
+    # If the recommendation exists, delete it
+    if recommendation:
+        app.logger.info("Recommendation found for product_id: %d and recommended_product_id: %d", product_id, recommended_product_id)
+        db.session.delete(recommendation)
+        db.session.commit()
+        app.logger.info("Recommendation with product_id: %d and recommended_product_id: %d deleted successfully.", product_id, recommended_product_id)
+        return {}, status.HTTP_204_NO_CONTENT
+
+    # If not found, return 404
+    app.logger.info("Recommendation with product_id: %d and recommended_product_id: %d not found.", product_id, recommended_product_id)
+    abort(status.HTTP_404_NOT_FOUND, f"Recommendation with product_id '{product_id}' and recommended_product_id '{recommended_product_id}' was not found.")
 
 
 ######################################################################
