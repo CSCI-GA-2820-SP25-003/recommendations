@@ -158,6 +158,24 @@ def get_recommendations(recommendation_id):
 
 
 ######################################################################
+# UPDATE A RECOMMENDATION
+######################################################################
+######################################################################
+#  DELETE A RECOMMENDATION
+######################################################################
+@app.route("/recommendations/<int:recommendation_id>", methods=["DELETE"])
+def delete_recommendations(recommendation_id):
+    """
+    Delete a Recommendation
+    This endpoint will delete a Recommendation based the id specified in the path
+    """
+    app.logger.info("Request to delete recommendation with id: %d", recommendation_id)
+    recommendation = Recommendation.find(recommendation_id)
+    if recommendation:
+        recommendation.delete()
+    app.logger.info("Recommendation with ID: %d delete complete.", recommendation_id)
+    return "", status.HTTP_204_NO_CONTENT
+######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
 
