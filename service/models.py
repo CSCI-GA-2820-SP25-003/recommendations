@@ -130,3 +130,31 @@ class Recommendation(db.Model):
         """
         logger.info("Processing name query for %s ...", name)
         return cls.query.filter(cls.name == name)
+
+    @classmethod
+    def find_by_address(cls, address: str) -> list:
+        """Returns all of the Recommendations in a address
+
+        :param address: the address of the Recommendations you want to match
+        :type address: str
+
+        :return: a collection of Recommendations in that address
+        :rtype: list
+
+        """
+        logger.info("Processing address query for %s ...", address)
+        return cls.query.filter(cls.address == address)
+
+    @classmethod
+    def find_by_email(cls, email: str) -> list:
+        """Returns all Recommendations by their email
+
+        :param email: the email of the Recommendations you want to match
+        :type available: str
+
+        :return: a collection of Recommendations that are available
+        :rtype: list
+
+        """
+        logger.info("Processing email query for %s ...", email)
+        return cls.query.filter(cls.email == email)

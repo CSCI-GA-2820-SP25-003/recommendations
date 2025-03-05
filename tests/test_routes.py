@@ -23,6 +23,7 @@ import os
 import logging
 from unittest import TestCase
 from wsgi import app
+from urllib.parse import quote_plus
 from service.common import status
 from service.models import db, Recommendation
 from .factories import RecommendationFactory
@@ -37,7 +38,7 @@ BASE_URL = "/recommendations"
 #  T E S T   C A S E S
 ######################################################################
 # pylint: disable=too-many-public-methods
-class TestYourResourceService(TestCase):
+class TestRecommendationService(TestCase):
     """REST API Server Tests"""
 
     @classmethod
@@ -64,6 +65,25 @@ class TestYourResourceService(TestCase):
     def tearDown(self):
         """This runs after each test"""
         db.session.remove()
+
+    ############################################################
+    # Utility function to bulk create recommendations
+    ############################################################
+    def _create_recommendations(self, count: int = 1) -> list:
+        """Factory method to create recommendations in bulk"""
+        recommendations = []
+        for _ in range(count):
+            test_recommendation = RecommendationFactory()
+            response = self.client.post(BASE_URL, json=test_recommendation.serialize())
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_201_CREATED,
+                "Could not create test recommendation",
+            )
+            new_recommendation = response.get_json()
+            test_recommendation.id = new_recommendation["id"]
+            recommendations.append(test_recommendation)
+        return recommendations
 
     ######################################################################
     #  P L A C E   T E S T   C A S E S   H E R E
@@ -94,11 +114,104 @@ class TestYourResourceService(TestCase):
         self.assertEqual(new_recommendation["address"], test_recommendation.address)
         self.assertEqual(new_recommendation["email"], test_recommendation.email)
 
-        # TODO: Uncomment the following test when get_recommendations is implemented.
         # Check that the location header was correct
-        # response = self.client.get(location)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_recommendation = response.get_json()
-        # self.assertEqual(new_recommendation["name"], test_recommendation.name)
-        # self.assertEqual(new_recommendation["address"], test_recommendation.address)
-        # self.assertEqual(new_recommendation["email"], test_recommendation.email)
+        response = self.client.get(location)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_recommendation = response.get_json()
+        self.assertEqual(new_recommendation["name"], test_recommendation.name)
+        self.assertEqual(new_recommendation["address"], test_recommendation.address)
+        self.assertEqual(new_recommendation["email"], test_recommendation.email)
+
+    # ----------------------------------------------------------
+    # TEST LIST
+    # ----------------------------------------------------------
+    def test_list_all_recommendations(self):
+        """It should List all Recommendations in the database"""
+        recommendations = Recommendation.all()
+        self.assertEqual(recommendations, [])
+        # Create 5 Recommendations
+        for _ in range(5):
+            recommendation = RecommendationFactory()
+            recommendation.create()
+        # See if we get back 5 recommendations
+        recommendations = Recommendation.all()
+        self.assertEqual(len(recommendations), 5)
+
+    # ----------------------------------------------------------
+    # TEST READ
+    # ----------------------------------------------------------
+    def test_read_a_recommendation(self):
+        """It should Read a Recommendation"""
+        recommendation = RecommendationFactory()
+        logging.debug(recommendation)
+        recommendation.id = None
+        recommendation.create()
+        self.assertIsNotNone(recommendation.id)
+        # Fetch it back
+        found_recommendation = Recommendation.find(recommendation.id)
+        self.assertEqual(found_recommendation.id, recommendation.id)
+        self.assertEqual(found_recommendation.name, recommendation.name)
+        self.assertEqual(found_recommendation.address, recommendation.address)
+        self.assertEqual(found_recommendation.email, recommendation.email)
+
+    # ----------------------------------------------------------
+    # TEST QUERY
+    # ----------------------------------------------------------
+    def test_query_by_name(self):
+        """It should Query Recommendations by name"""
+        recommendations = self._create_recommendations(5)
+        test_name = recommendations[0].name
+        name_count = len(
+            [
+                recommendation
+                for recommendation in recommendations
+                if recommendation.name == test_name
+            ]
+        )
+        response = self.client.get(
+            BASE_URL, query_string=f"name={quote_plus(test_name)}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), name_count)
+        # check the data just to be sure
+        for recommendation in data:
+            self.assertEqual(recommendation["name"], test_name)
+
+    def test_query_recommendation_list_by_address(self):
+        """It should Query Recommendations by Address"""
+        recommendations = self._create_recommendations(10)
+        test_address = recommendations[0].address
+        address_recommendations = [
+            recommendation
+            for recommendation in recommendations
+            if recommendation.address == test_address
+        ]
+        response = self.client.get(
+            BASE_URL, query_string=f"address={quote_plus(test_address)}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), len(address_recommendations))
+        # check the data just to be sure
+        for recommendation in data:
+            self.assertEqual(recommendation["address"], test_address)
+
+    def test_query_recommendation_list_by_email(self):
+        """It should Query Recommendations by Email"""
+        recommendations = self._create_recommendations(10)
+        test_email = recommendations[0].email
+        email_recommendations = [
+            recommendation
+            for recommendation in recommendations
+            if recommendation.email == test_email
+        ]
+        response = self.client.get(
+            BASE_URL, query_string=f"email={quote_plus(test_email)}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), len(email_recommendations))
+        # check the data just to be sure
+        for recommendation in data:
+            self.assertEqual(recommendation["email"], test_email)
