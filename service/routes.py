@@ -66,18 +66,79 @@ def create_recommendations():
     recommendation.create()
     app.logger.info("Recommendation with new id [%s] saved!", recommendation.id)
 
-    # TODO: Uncomment 'location_url' when get_recommendations is implemented.
     # Return the location of the new Recommendation
-    # location_url = url_for(
-    #     "get_recommendations", recommendation_id=recommendation.id, _external=True
-    # )
-    location_url = "unknown"
+    location_url = url_for(
+        "get_recommendations", recommendation_id=recommendation.id, _external=True
+    )
 
     return (
         jsonify(recommendation.serialize()),
         status.HTTP_201_CREATED,
         {"Location": location_url},
     )
+
+
+######################################################################
+# LIST ALL RECOMMENDATIONS
+######################################################################
+@app.route("/recommendations", methods=["GET"])
+def list_recommendations():
+    """Returns all of the Recommendations"""
+    app.logger.info("Request for recommendation list")
+
+    recommendations = []
+
+    # Parse any arguments from the query string
+    id = request.args.get("id")
+    name = request.args.get("name")
+    address = request.args.get("address")
+    email = request.args.get("email")
+
+    if id:
+        app.logger.info("Find by id: %s", id)
+        recommendations = Recommendation.find(id)
+    elif name:
+        app.logger.info("Find by name: %s", name)
+        recommendations = Recommendation.find_by_name(name)
+    elif address:
+        app.logger.info("Find by address: %s", address)
+        recommendations = Recommendation.find_by_address(address)
+    elif email:
+        app.logger.info("Find by email: %s", email)
+        recommendations = Recommendation.find_by_email(email)
+    else:
+        app.logger.info("Find all")
+        recommendations = Recommendation.all()
+
+    results = [recommendation.serialize() for recommendation in recommendations]
+    app.logger.info("Returning %d recommendations", len(results))
+    return jsonify(results), status.HTTP_200_OK
+
+
+######################################################################
+# READ A RECOMMENDATION
+######################################################################
+@app.route("/recommendations/<int:recommendation_id>", methods=["GET"])
+def get_recommendations(recommendation_id):
+    """
+    Retrieve a single Recommendation
+
+    This endpoint will return a Recommendation based on it's id
+    """
+    app.logger.info(
+        "Request to Retrieve a recommendation with id [%s]", recommendation_id
+    )
+
+    # Attempt to find the Recommendation and abort if not found
+    recommendation = Recommendation.find(recommendation_id)
+    if not recommendation:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id '{recommendation_id}' was not found.",
+        )
+
+    app.logger.info("Returning recommendation: %s", recommendation.name)
+    return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
 ######################################################################
