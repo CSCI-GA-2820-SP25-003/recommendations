@@ -186,61 +186,29 @@ def update_recommendations(recommendations_id):
     return jsonify(recommendations.serialize()), status.HTTP_200_OK
 
 
-    ######################################################################
-    # LINK AN RECOMMENDATION ID TO A EXISTING PRODUCT
-    ######################################################################
 @app.route(
-    "/recommendations/<int:product_id>/<int:recommendations_id>", methods=["PUT"]
+    "/recommendations/<int:recommendation_id>/link/<int:recommend_product_id>",
+    methods=["PUT"]
 )
-def update_recommendations_id(product_id, recommendations_id):
+def link_recommendation_product(recommendation_id, recommend_product_id):
     """
-    Link a recommendation id to an existing product
-    This endpoint will lina a recommendation id to a product.
+    Link a recommended product to an existing recommendation
     """
-    app.logger.info("Request to update recommendations with id: %d", product_id)
-    check_content_type("application/json")
+    app.logger.info("Request to link recommended product %d to recommendation %d", recommend_product_id, recommendation_id)
 
-    recommendations = Recommendation.find(product_id)
-    if not recommendations:
-        error(
+    recommendation = Recommendation.find(recommendation_id)
+    if not recommendation:
+        abort(
             status.HTTP_404_NOT_FOUND,
-            f"Recommendation with id: '{product_id}' was not found.",
+            f"Recommendation with id '{recommendation_id}' was not found.",
         )
 
-    recommendations.deserialize(request.get_json())
-    recommendations.recommendation_id = recommendations_id
-    recommendations.update()
+    recommendation.recommend_product_id = recommend_product_id
+    recommendation.update()
 
-    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
-    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+    app.logger.info("Recommendation %d now links to recommended product %d", recommendation_id, recommend_product_id)
 
-
-    ######################################################################
-    # LINK AN RECOMMENDATION NAME TO A EXISTING PRODUCT
-    ######################################################################
-@app.route("/recommendations/<int:product_id>/<name>", methods=["PUT"])
-def update_recommendations_name(product_id, name):
-    """
-    Link a recommendation name to an existing product
-    This endpoint will lina a recommendation name to a product.
-    """
-    app.logger.info("Request to update recommendations with id: %d", product_id)
-    check_content_type("application/json")
-
-    recommendations = Recommendation.find(product_id)
-    if not recommendations:
-        error(
-            status.HTTP_404_NOT_FOUND,
-            f"Recommendation with id: '{product_id}' was not found.",
-        )
-
-    recommendations.deserialize(request.get_json())
-    recommendations.recommendation_name = name
-    recommendations.update()
-
-    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
-    return jsonify(recommendations.serialize()), status.HTTP_200_OK
-
+    return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 ######################################################################
 #  DELETE A RECOMMENDATION
