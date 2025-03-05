@@ -73,8 +73,10 @@ class TestRecommendation(TestCase):
         found = Recommendation.all()
         self.assertEqual(len(found), 1)
         data = Recommendation.find(recommendation.id)
-        self.assertEqual(data.name, recommendation.name)
-        self.assertEqual(data.address, recommendation.address)
-        self.assertEqual(data.email, recommendation.email)
+        self.assertEqual(data.product_id, recommendation.product_id)
+        self.assertEqual(data.customer_id, recommendation.customer_id)
+        self.assertEqual(data.recommend_type, recommendation.recommend_type)
+        self.assertEqual(data.recommend_product_id, recommendation.recommend_product_id)
+        self.assertEqual(data.rec_success, recommendation.rec_success)
 
     # Todo: Add your test cases here...

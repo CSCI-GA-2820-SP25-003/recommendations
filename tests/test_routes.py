@@ -23,7 +23,6 @@ import os
 import logging
 from unittest import TestCase
 from wsgi import app
-from urllib.parse import quote_plus
 from service.common import status
 from service.models import db, Recommendation
 from .factories import RecommendationFactory
@@ -120,17 +119,43 @@ class TestRecommendationService(TestCase):
 
         # Check the data is correct
         new_recommendation = response.get_json()
-        self.assertEqual(new_recommendation["name"], test_recommendation.name)
-        self.assertEqual(new_recommendation["address"], test_recommendation.address)
-        self.assertEqual(new_recommendation["email"], test_recommendation.email)
+        self.assertEqual(
+            new_recommendation["product_id"], test_recommendation.product_id
+        )
+        self.assertEqual(
+            new_recommendation["customer_id"], test_recommendation.customer_id
+        )
+        self.assertEqual(
+            new_recommendation["recommend_type"], test_recommendation.recommend_type
+        )
+        self.assertEqual(
+            new_recommendation["recommend_product_id"],
+            test_recommendation.recommend_product_id,
+        )
+        self.assertEqual(
+            new_recommendation["rec_success"], test_recommendation.rec_success
+        )
 
         # Check that the location header was correct
         response = self.client.get(location)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         new_recommendation = response.get_json()
-        self.assertEqual(new_recommendation["name"], test_recommendation.name)
-        self.assertEqual(new_recommendation["address"], test_recommendation.address)
-        self.assertEqual(new_recommendation["email"], test_recommendation.email)
+        self.assertEqual(
+            new_recommendation["product_id"], test_recommendation.product_id
+        )
+        self.assertEqual(
+            new_recommendation["customer_id"], test_recommendation.customer_id
+        )
+        self.assertEqual(
+            new_recommendation["recommend_type"], test_recommendation.recommend_type
+        )
+        self.assertEqual(
+            new_recommendation["recommend_product_id"],
+            test_recommendation.recommend_product_id,
+        )
+        self.assertEqual(
+            new_recommendation["rec_success"], test_recommendation.rec_success
+        )
 
     # ----------------------------------------------------------
     # TEST LIST
@@ -160,68 +185,101 @@ class TestRecommendationService(TestCase):
         # Fetch it back
         found_recommendation = Recommendation.find(recommendation.id)
         self.assertEqual(found_recommendation.id, recommendation.id)
-        self.assertEqual(found_recommendation.name, recommendation.name)
-        self.assertEqual(found_recommendation.address, recommendation.address)
-        self.assertEqual(found_recommendation.email, recommendation.email)
+        self.assertEqual(found_recommendation.product_id, recommendation.product_id)
+        self.assertEqual(found_recommendation.customer_id, recommendation.customer_id)
+        self.assertEqual(
+            found_recommendation.recommend_type, recommendation.recommend_type
+        )
+        self.assertEqual(
+            found_recommendation.recommend_product_id,
+            recommendation.recommend_product_id,
+        )
+        self.assertEqual(found_recommendation.rec_success, recommendation.rec_success)
 
     # ----------------------------------------------------------
-    # TEST QUERY
+    # TEST QUERY BY PRODUCT_ID
     # ----------------------------------------------------------
-    def test_query_by_name(self):
-        """It should Query Recommendations by name"""
+    def test_query_by_product_id(self):
+        """It should Query Recommendations by product_id"""
         recommendations = self._create_recommendations(5)
-        test_name = recommendations[0].name
-        name_count = len(
-            [
-                recommendation
-                for recommendation in recommendations
-                if recommendation.name == test_name
-            ]
+        test_product_id = recommendations[0].product_id
+        product_id_count = len(
+            [r for r in recommendations if r.product_id == test_product_id]
         )
-        response = self.client.get(
-            BASE_URL, query_string=f"name={quote_plus(test_name)}"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.get_json()
-        self.assertEqual(len(data), name_count)
-        # check the data just to be sure
-        for recommendation in data:
-            self.assertEqual(recommendation["name"], test_name)
 
-    def test_query_recommendation_list_by_address(self):
-        """It should Query Recommendations by Address"""
-        recommendations = self._create_recommendations(10)
-        test_address = recommendations[0].address
-        address_recommendations = [
-            recommendation
-            for recommendation in recommendations
-            if recommendation.address == test_address
-        ]
         response = self.client.get(
-            BASE_URL, query_string=f"address={quote_plus(test_address)}"
+            BASE_URL, query_string=f"product_id={test_product_id}"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
-        self.assertEqual(len(data), len(address_recommendations))
-        # check the data just to be sure
-        for recommendation in data:
-            self.assertEqual(recommendation["address"], test_address)
+        self.assertEqual(len(data), product_id_count)
 
-    def test_query_recommendation_list_by_email(self):
-        """It should Query Recommendations by Email"""
+        for recommendation in data:
+            self.assertEqual(recommendation["product_id"], test_product_id)
+
+    # ----------------------------------------------------------
+    # TEST QUERY BY CUSTOMER_ID
+    # ----------------------------------------------------------
+    def test_query_by_customer_id(self):
+        """It should Query Recommendations by customer_id"""
         recommendations = self._create_recommendations(10)
-        test_email = recommendations[0].email
-        email_recommendations = [
-            recommendation
-            for recommendation in recommendations
-            if recommendation.email == test_email
+        test_customer_id = recommendations[0].customer_id
+        customer_id_recommendations = [
+            r for r in recommendations if r.customer_id == test_customer_id
         ]
+
         response = self.client.get(
-            BASE_URL, query_string=f"email={quote_plus(test_email)}"
+            BASE_URL, query_string=f"customer_id={test_customer_id}"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
-        self.assertEqual(len(data), len(email_recommendations))
-        # check the data just to be sure
+        self.assertEqual(len(data), len(customer_id_recommendations))
+
         for recommendation in data:
-            self.assertEqual(recommendation["email"], test_email)
+            self.assertEqual(recommendation["customer_id"], test_customer_id)
+
+    # ----------------------------------------------------------
+    # TEST QUERY BY RECOMMEND TYPE
+    # ----------------------------------------------------------
+    def test_query_by_recommend_type(self):
+        """It should Query Recommendations by recommend_type"""
+        recommendations = self._create_recommendations(10)
+        test_recommend_type = recommendations[0].recommend_type
+        type_recommendations = [
+            r for r in recommendations if r.recommend_type == test_recommend_type
+        ]
+
+        response = self.client.get(
+            BASE_URL, query_string=f"recommend_type={test_recommend_type}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), len(type_recommendations))
+
+        for recommendation in data:
+            self.assertEqual(recommendation["recommend_type"], test_recommend_type)
+
+    # ----------------------------------------------------------
+    # TEST QUERY BY RECOMMEND PRODUCT_ID
+    # ----------------------------------------------------------
+    def test_query_by_recommend_product_id(self):
+        """It should Query Recommendations by recommend_product_id"""
+        recommendations = self._create_recommendations(10)
+        test_recommend_product_id = recommendations[0].recommend_product_id
+        recommend_product_recommendations = [
+            r
+            for r in recommendations
+            if r.recommend_product_id == test_recommend_product_id
+        ]
+
+        response = self.client.get(
+            BASE_URL, query_string=f"recommend_product_id={test_recommend_product_id}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), len(recommend_product_recommendations))
+
+        for recommendation in data:
+            self.assertEqual(
+                recommendation["recommend_product_id"], test_recommend_product_id
+            )
