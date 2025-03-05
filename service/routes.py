@@ -18,7 +18,7 @@
 Recommendation Service
 
 This service implements a REST API that allows you to Create, Read, Update
-and Delete Recommendation
+and Delete Recommendations
 """
 
 from flask import jsonify, request, url_for, abort
@@ -65,7 +65,7 @@ def index():
 def create_recommendations():
     """
     Create a Recommendation
-    This endpoint will create a Recommendation based the data in the body that is posted
+    This endpoint will create a Recommendation based on the data in the request body
     """
     app.logger.info("Request to Create a Recommendation...")
     check_content_type("application/json")
@@ -103,25 +103,27 @@ def list_recommendations():
     recommendations = []
 
     # Parse any arguments from the query string
-    id = request.args.get("id")
-    name = request.args.get("name")
-    address = request.args.get("address")
-    email = request.args.get("email")
+    product_id = request.args.get("product_id")
+    customer_id = request.args.get("customer_id")
+    recommend_type = request.args.get("recommend_type")
+    recommend_product_id = request.args.get("recommend_product_id")
 
-    if id:
-        app.logger.info("Find by id: %s", id)
-        recommendations = Recommendation.find(id)
-    elif name:
-        app.logger.info("Find by name: %s", name)
-        recommendations = Recommendation.find_by_name(name)
-    elif address:
-        app.logger.info("Find by address: %s", address)
-        recommendations = Recommendation.find_by_address(address)
-    elif email:
-        app.logger.info("Find by email: %s", email)
-        recommendations = Recommendation.find_by_email(email)
+    if product_id:
+        app.logger.info("Filtering by product_id: %s", product_id)
+        recommendations = Recommendation.find_by_product_id(int(product_id))
+    elif customer_id:
+        app.logger.info("Filtering by customer_id: %s", customer_id)
+        recommendations = Recommendation.find_by_customer_id(int(customer_id))
+    elif recommend_type:
+        app.logger.info("Filtering by recommend_type: %s", recommend_type)
+        recommendations = Recommendation.find_by_recommend_type(recommend_type)
+    elif recommend_product_id:
+        app.logger.info("Filtering by recommend_product_id: %s", recommend_product_id)
+        recommendations = Recommendation.find_by_recommend_product_id(
+            int(recommend_product_id)
+        )
     else:
-        app.logger.info("Find all")
+        app.logger.info("Returning all recommendations")
         recommendations = Recommendation.all()
 
     results = [recommendation.serialize() for recommendation in recommendations]
@@ -151,7 +153,7 @@ def get_recommendations(recommendation_id):
             f"Recommendation with id '{recommendation_id}' was not found.",
         )
 
-    app.logger.info("Returning recommendation: %s", recommendation.name)
+    app.logger.info("Returning recommendation: %s", recommendation.id)
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
