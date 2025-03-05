@@ -60,6 +60,226 @@ tests/                     - test cases package
 └── test_routes.py         - test suite for service routes
 ```
 
+## Database
+
+The internal database has the following structure:
+
+- `id` (int): Internal identifier, primary key
+- `product_id` (int): ID of the product being recommended for
+- `customer_id` (int): ID of the customer for whom the recommendation was made
+- `recommend_type` (str < 63): Type of recommendation (e.g., up-sell, cross-sell, down-sell)
+- `recommend_product_id` (int): ID of the recommended product
+- `rec_success` (int): Number of times the recommendation was accepted
+
+The `id` field is automatically generated internally and should not be provided in request bodies.
+
+## Recommendation Response JSON
+
+The format of the recommendation JSON returned by API responses is:
+
+- `id` (int): Internal identifier
+- `product_id` (int): ID of the product being recommended for
+- `customer_id` (int): ID of the customer for whom the recommendation was made
+- `recommend_type` (str): Type of recommendation (e.g., up-sell, cross-sell, down-sell)
+- `recommend_product_id` (int): ID of the recommended product
+- `rec_success` (int): Number of times the recommendation was accepted
+
+## Recommendation Request JSON
+
+The format of the recommendation JSON expected by `POST` and `PUT` requests is:
+
+- `product_id` (int): ID of the product being recommended for (required)
+- `customer_id` (int): ID of the customer for whom the recommendation is made (required)
+- `recommend_type` (str): Type of recommendation (e.g., up-sell, cross-sell, down-sell) (required)
+- `recommend_product_id` (int): ID of the recommended product (required)
+- `rec_success` (int): Initial success count (required)
+
+The `id` field should **not** be included in request bodies.
+
+## Available API Endpoints
+
+All routes return JSON responses and accept JSON request bodies where applicable. Routes return HTTP 200 OK unless otherwise specified (or HTTP 4xx/5xx in case of errors).
+
+### GET /
+
+Returns general information about the service.
+
+Example response:
+
+```json
+{
+    "name": "Recommendation Demo REST API Service",
+    "paths": "http://127.0.0.1:8080/recommendations",
+    "version": "1.0"
+}
+```
+
+### GET /recommendations
+
+List all recommendations in the database. Supports optional query parameters to filter results:
+
+- `product_id` (int): Filter by product ID
+- `customer_id` (int): Filter by customer ID
+- `recommend_type` (str): Filter by recommendation type
+- `recommend_product_id` (int): Filter by recommended product ID
+
+Always returns a collection (empty if no matches found).
+
+Example response:
+
+```json
+[
+    {
+        "id": 1,
+        "product_id": 100,
+        "customer_id": 200,
+        "recommend_type": "up-sell",
+        "recommend_product_id": 300,
+        "rec_success": 12
+    },
+    {
+        "id": 2,
+        "product_id": 101,
+        "customer_id": 201,
+        "recommend_type": "cross-sell",
+        "recommend_product_id": 301,
+        "rec_success": 5
+    }
+]
+```
+
+### GET /recommendations/{recommendation_id}
+
+Retrieve a specific recommendation by ID. Returns HTTP 404 Not Found if no such recommendation exists.
+
+Example response for `/recommendations/1`:
+
+```json
+{
+    "id": 1,
+    "product_id": 100,
+    "customer_id": 200,
+    "recommend_type": "up-sell",
+    "recommend_product_id": 300,
+    "rec_success": 12
+}
+```
+
+### POST /recommendations
+
+Create a new recommendation.
+
+#### Example request:
+
+```json
+{
+    "product_id": 100,
+    "customer_id": 200,
+    "recommend_type": "up-sell",
+    "recommend_product_id": 300,
+    "rec_success": 0
+}
+```
+
+#### Example response (HTTP 201 Created):
+
+```json
+{
+    "id": 1,
+    "product_id": 100,
+    "customer_id": 200,
+    "recommend_type": "up-sell",
+    "recommend_product_id": 300,
+    "rec_success": 0
+}
+```
+
+### PUT /recommendations/{recommendation_id}
+
+Update an existing recommendation.
+
+#### Example request:
+
+```json
+{
+    "product_id": 100,
+    "customer_id": 200,
+    "recommend_type": "up-sell",
+    "recommend_product_id": 300,
+    "rec_success": 1
+}
+```
+
+#### Example response:
+
+```json
+{
+    "id": 1,
+    "product_id": 100,
+    "customer_id": 200,
+    "recommend_type": "up-sell",
+    "recommend_product_id": 300,
+    "rec_success": 1
+}
+```
+
+### DELETE /recommendations/{recommendation_id}
+
+Delete a recommendation by ID. Always returns HTTP 204 No Content, even if the recommendation didn’t exist.
+
+## Testing
+
+To run the test suite, use the `Makefile` inside the container:
+
+```bash
+make install
+make test
+```
+
+This will execute all unit and integration tests using `pytest` and generate a coverage report.
+
+## Health Check
+
+### GET /health
+
+Quick check to verify the service is running.
+
+Example response:
+
+```json
+{
+    "status": 200,
+    "message": "Healthy"
+}
+```
+
+## Development
+
+To set up your development environment:
+
+1. Clone the repository.
+2. Install dependencies:
+```bash
+make install
+```
+3. Run the service:
+```bash
+flask run
+```
+
+---
+
+## Database Initialization
+
+The database schema is automatically created on startup if it doesn’t exist. For development, you can also reset the database manually using:
+
+```bash
+flask shell
+>>> from service import models
+>>> models.db.drop_all()    // Optional: if you need to reset the schema
+>>> models.db.create_all()
+```
+
 ## License
 
 Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/). All rights reserved.
