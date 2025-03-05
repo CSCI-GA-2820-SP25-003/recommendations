@@ -173,6 +173,87 @@ class TestRecommendationService(TestCase):
         self.assertEqual(len(recommendations), 5)
 
     # ----------------------------------------------------------
+    # TEST UPDATE RECOMMENDATION
+    # ----------------------------------------------------------
+    def test_update_recommendation(self):
+        """It should Update an existing Recommendation"""
+        # create a recommendation to update
+        test_recommendation = RecommendationFactory()
+        response = self.client.post(BASE_URL, json=test_recommendation.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # update the recommendation
+        new_recommendation = response.get_json()
+        logging.debug(new_recommendation)
+
+        # Modify some fields
+        new_recommendation["recommend_type"] = "cross-sell"
+        new_recommendation["rec_success"] = 99
+
+        response = self.client.put(
+            f"{BASE_URL}/{new_recommendation['id']}", json=new_recommendation
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify the update
+        updated_recommendation = response.get_json()
+        self.assertEqual(updated_recommendation["recommend_type"], "cross-sell")
+        self.assertEqual(updated_recommendation["rec_success"], 99)
+
+        # Ensure the other fields remain unchanged
+        self.assertEqual(updated_recommendation["product_id"], test_recommendation.product_id)
+        self.assertEqual(updated_recommendation["customer_id"], test_recommendation.customer_id)
+        self.assertEqual(updated_recommendation["recommend_product_id"], test_recommendation.recommend_product_id)
+
+        
+    def test_update_product_id_in_recommendation(self):
+        """It should update the product_id for an existing Recommendation"""
+        # Create a recommendation to update
+        test_recommendation = RecommendationFactory()
+        response = self.client.post(BASE_URL, json=test_recommendation.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Fetch the newly created recommendation
+        new_recommendation = response.get_json()
+        logging.debug(new_recommendation)
+
+        # Update product_id (simulating a product replacement)
+        new_recommendation["product_id"] = 9999
+
+        response = self.client.put(
+            f"{BASE_URL}/{new_recommendation['id']}", json=new_recommendation
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        updated_recommendation = response.get_json()
+        self.assertEqual(updated_recommendation["product_id"], 9999)
+
+    
+    def test_update_recommend_type(self):
+        """It should update the recommend_type for an existing Recommendation"""
+        # Create a recommendation to update
+        test_recommendation = RecommendationFactory()
+        response = self.client.post(BASE_URL, json=test_recommendation.serialize())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Fetch the newly created recommendation
+        new_recommendation = response.get_json()
+        logging.debug(new_recommendation)
+
+        # Update the recommend_type
+        new_recommendation["recommend_type"] = "up-sell"
+
+        response = self.client.put(
+            f"{BASE_URL}/{new_recommendation['id']}", json=new_recommendation
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        updated_recommendation = response.get_json()
+        self.assertEqual(updated_recommendation["recommend_type"], "up-sell")
+
+
+
+    # ----------------------------------------------------------
     # TEST DELETE RECOMMENDATION
     # ----------------------------------------------------------
     def test_delete_recommendation(self):

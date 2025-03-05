@@ -189,6 +189,56 @@ def get_recommendations(recommendation_id):
 ######################################################################
 # UPDATE A RECOMMENDATION
 ######################################################################
+
+
+@app.route("/recommendations/<int:recommendations_id>", methods=["PUT"])
+def update_recommendations(recommendations_id):
+    """
+    Update a Recommendation
+    This endpoint will update a Recommendation based the body that is posted
+    """
+    app.logger.info("Request to update recommendations with id: %d", recommendations_id)
+    check_content_type("application/json")
+
+    recommendations = Recommendation.find(recommendations_id)
+    if not recommendations:
+        error(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id: '{recommendations_id}' was not found.",
+        )
+
+    recommendations.deserialize(request.get_json())
+    recommendations.id = recommendations_id
+    recommendations.update()
+
+    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
+    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+
+
+@app.route(
+    "/recommendations/<int:recommendation_id>/link/<int:recommend_product_id>",
+    methods=["PUT"]
+)
+def link_recommendation_product(recommendation_id, recommend_product_id):
+    """
+    Link a recommended product to an existing recommendation
+    """
+    app.logger.info("Request to link recommended product %d to recommendation %d", recommend_product_id, recommendation_id)
+
+    recommendation = Recommendation.find(recommendation_id)
+    if not recommendation:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id '{recommendation_id}' was not found.",
+        )
+
+    recommendation.recommend_product_id = recommend_product_id
+    recommendation.update()
+
+    app.logger.info("Recommendation %d now links to recommended product %d", recommendation_id, recommend_product_id)
+
+    return jsonify(recommendation.serialize()), status.HTTP_200_OK
+
 ######################################################################
 #  DELETE A RECOMMENDATION
 ######################################################################
@@ -229,3 +279,12 @@ def check_content_type(content_type) -> None:
         status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
         f"Content-Type must be {content_type}",
     )
+
+
+######################################################################
+# Logs error messages before aborting
+######################################################################
+def error(status_code, reason):
+    """Logs the error and then aborts"""
+    app.logger.error(reason)
+    abort(status_code, reason)
