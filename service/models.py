@@ -24,14 +24,14 @@ class Recommendation(db.Model):
 
     ##################################################
     # Table Schema
-    '''
+    """
     id ->                   the recommendation id
     product_id ->           product id
     customer_id ->          customer id
     recommend_type ->       "up-sell", "cross-sell", "down-sell"
     recommend_product_id->  id of the recommended product
     rec_success ->          recommendation success rate
-    '''
+    """
     ##################################################
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, nullable=False)
