@@ -1,6 +1,6 @@
 # NYU DevOps Project Template
 
-[![CI](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions/workflows/ci.yml/**badge**.svg)](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions)
+[![CI](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions)
 
 [![codecov](https://codecov.io/gh/CSCI-GA-2820-SP25-003/recommendations/branch/master/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-SP25-003/recommendations)
 
