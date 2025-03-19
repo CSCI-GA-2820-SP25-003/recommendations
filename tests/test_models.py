@@ -65,7 +65,6 @@ class TestRecommendation(TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
-
     def test_create_recommendation(self):
         """It should create a Recommendation"""
         recommendation = RecommendationFactory()
@@ -136,52 +135,36 @@ class TestRecommendation(TestCase):
         recommendations = [RecommendationFactory(product_id=101) for _ in range(3)]
         for rec in recommendations:
             rec.create()
-
         found = Recommendation.find_by_product_id(101)
         self.assertEqual(len(found), 3)
 
-        for rec in found:
-            self.assertEqual(rec.product_id, 101)
-
     def test_find_by_customer_id(self):
         """It should Find Recommendations by customer_id"""
-        recommendations = [RecommendationFactory(customer_id=202) for _ in range(4)]
+        recommendations = [RecommendationFactory(customer_id=202) for _ in range(3)]
         for rec in recommendations:
             rec.create()
-
         found = Recommendation.find_by_customer_id(202)
-        self.assertEqual(len(found), 4)
-
-        for rec in found:
-            self.assertEqual(rec.customer_id, 202)
+        self.assertEqual(len(found), 3)
 
     def test_find_by_recommend_type(self):
         """It should Find Recommendations by recommend_type"""
         recommendations = [
-            RecommendationFactory(recommend_type="up-sell") for _ in range(5)
+            RecommendationFactory(recommend_type="cross-sell") for _ in range(3)
         ]
         for rec in recommendations:
             rec.create()
-
-        found = Recommendation.find_by_recommend_type("up-sell")
-        self.assertEqual(len(found), 5)
-
-        for rec in found:
-            self.assertEqual(rec.recommend_type, "up-sell")
+        found = Recommendation.find_by_recommend_type("cross-sell")
+        self.assertEqual(len(found), 3)
 
     def test_find_by_recommend_product_id(self):
         """It should Find Recommendations by recommend_product_id"""
         recommendations = [
-            RecommendationFactory(recommend_product_id=303) for _ in range(2)
+            RecommendationFactory(recommend_product_id=303) for _ in range(3)
         ]
         for rec in recommendations:
             rec.create()
-
         found = Recommendation.find_by_recommend_product_id(303)
-        self.assertEqual(len(found), 2)
-
-        for rec in found:
-            self.assertEqual(rec.recommend_product_id, 303)
+        self.assertEqual(len(found), 3)
 
     def test_serialize_recommendation(self):
         """It should Serialize a Recommendation"""

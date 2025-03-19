@@ -148,37 +148,55 @@ def create_recommendations():
 ######################################################################
 @app.route("/recommendations", methods=["GET"])
 def list_recommendations():
-    """Returns all of the Recommendations"""
-    app.logger.info("Request for recommendation list")
+    """Returns all of the Recommendations, with optional filtering"""
+    app.logger.info("Request for recommendation list with filters")
 
-    recommendations = []
-
-    # Parse any arguments from the query string
+    # Retrieve query parameters
     product_id = request.args.get("product_id")
     customer_id = request.args.get("customer_id")
     recommend_type = request.args.get("recommend_type")
     recommend_product_id = request.args.get("recommend_product_id")
 
-    if product_id:
-        app.logger.info("Filtering by product_id: %s", product_id)
-        recommendations = Recommendation.find_by_product_id(int(product_id))
-    elif customer_id:
-        app.logger.info("Filtering by customer_id: %s", customer_id)
-        recommendations = Recommendation.find_by_customer_id(int(customer_id))
-    elif recommend_type:
-        app.logger.info("Filtering by recommend_type: %s", recommend_type)
-        recommendations = Recommendation.find_by_recommend_type(recommend_type)
-    elif recommend_product_id:
-        app.logger.info("Filtering by recommend_product_id: %s", recommend_product_id)
-        recommendations = Recommendation.find_by_recommend_product_id(
-            int(recommend_product_id)
-        )
-    else:
-        app.logger.info("Returning all recommendations")
-        recommendations = Recommendation.all()
+    query = Recommendation.query
+    VALID_RECOMMEND_TYPES = ["up-sell", "down-sell", "cross-sell"]
 
+    if product_id:
+        if not product_id.isdigit():
+            return jsonify(error="Invalid product_id"), status.HTTP_400_BAD_REQUEST
+        query = query.filter(Recommendation.product_id == int(product_id))
+
+    if customer_id:
+        if not customer_id.isdigit():
+            return jsonify(error="Invalid customer_id"), status.HTTP_400_BAD_REQUEST
+        query = query.filter(Recommendation.customer_id == int(customer_id))
+
+    if recommend_type:
+        if (
+            not isinstance(recommend_type, str)
+            or recommend_type not in VALID_RECOMMEND_TYPES
+        ):
+            return (
+                jsonify(
+                    error=f"Invalid recommend_type. Must be one of {VALID_RECOMMEND_TYPES}"
+                ),
+                status.HTTP_400_BAD_REQUEST,
+            )
+        query = query.filter(Recommendation.recommend_type == recommend_type)
+
+    if recommend_product_id:
+        if not recommend_product_id.isdigit():
+            return (
+                jsonify(error="Invalid recommend_product_id"),
+                status.HTTP_400_BAD_REQUEST,
+            )
+        query = query.filter(
+            Recommendation.recommend_product_id == int(recommend_product_id)
+        )
+
+    recommendations = query.all()
+
+    # Serialize and return the results
     results = [recommendation.serialize() for recommendation in recommendations]
-    app.logger.info("Returning %d recommendations", len(results))
     return jsonify(results), status.HTTP_200_OK
 
 
@@ -211,8 +229,6 @@ def get_recommendations(recommendation_id):
 ######################################################################
 # UPDATE A RECOMMENDATION
 ######################################################################
-
-
 @app.route("/recommendations/<int:recommendations_id>", methods=["PUT"])
 def update_recommendations(recommendations_id):
     """
@@ -290,8 +306,6 @@ def delete_recommendations(recommendation_id):
 ######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
-
-
 ######################################################################
 # Checks the ContentType of a request
 ######################################################################
