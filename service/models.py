@@ -20,11 +20,8 @@ class DataValidationError(Exception):
 class Recommendation(db.Model):
     """
     Class that represents a Recommendation
-    """
-
-    ##################################################
-    # Table Schema
-    """
+    Table Schema
+    
     id ->                   the recommendation id
     product_id ->           product id
     customer_id ->          customer id
@@ -32,6 +29,9 @@ class Recommendation(db.Model):
     recommend_product_id->  id of the recommended product
     rec_success ->          recommendation success rate
     """
+
+    ##################################################
+    # Table Schema
     ##################################################
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, nullable=False)

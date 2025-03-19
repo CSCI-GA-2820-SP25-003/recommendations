@@ -22,10 +22,10 @@ Test cases for Pet Model
 import os
 import logging
 from unittest import TestCase
+from unittest.mock import patch
 from wsgi import app
 from service.models import Recommendation, DataValidationError, db
 from .factories import RecommendationFactory
-from unittest.mock import patch
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -80,7 +80,6 @@ class TestRecommendation(TestCase):
         self.assertEqual(data.recommend_product_id, recommendation.recommend_product_id)
         self.assertEqual(data.rec_success, recommendation.rec_success)
 
-    # Todo: Add your test cases here...
 
     # ----------------------------------------------------------
     # TEST UPDATE RECOMMENDATION
