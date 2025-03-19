@@ -9,7 +9,7 @@ from service.models import Recommendation
 class RecommendationFactory(factory.Factory):
     """Creates fake recommendations for testing"""
 
-    class Meta: # pylint: disable=R0903
+    class Meta:                 # pylint: disable=R0903
         """Maps factory to data model"""
 
         model = Recommendation
