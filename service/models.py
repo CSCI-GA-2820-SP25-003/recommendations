@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 logger = logging.getLogger("flask.app")
 
 # Create the SQLAlchemy object to be initialized later in init_db()
-db = SQLAlchemy()  # pylint: disable=R0903
+db = SQLAlchemy()  
 
 
 class DataValidationError(Exception):
