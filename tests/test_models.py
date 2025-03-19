@@ -22,9 +22,9 @@ Test cases for Pet Model
 import os
 import logging
 from unittest import TestCase
-from unittest.mock import patch
 from wsgi import app
 from service.models import Recommendation, DataValidationError, db
+from unittest.mock import patch
 from .factories import RecommendationFactory
 
 DATABASE_URI = os.getenv(
@@ -79,7 +79,6 @@ class TestRecommendation(TestCase):
         self.assertEqual(data.recommend_type, recommendation.recommend_type)
         self.assertEqual(data.recommend_product_id, recommendation.recommend_product_id)
         self.assertEqual(data.rec_success, recommendation.rec_success)
-
 
     # ----------------------------------------------------------
     # TEST UPDATE RECOMMENDATION
