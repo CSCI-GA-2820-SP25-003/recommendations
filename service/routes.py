@@ -158,7 +158,7 @@ def list_recommendations():
     recommend_product_id = request.args.get("recommend_product_id")
 
     query = Recommendation.query
-    VALID_RECOMMEND_TYPES = ["up-sell", "down-sell", "cross-sell"]
+    valid_recommend_types = ["up-sell", "down-sell", "cross-sell"]
 
     if product_id:
         if not product_id.isdigit():
@@ -173,11 +173,11 @@ def list_recommendations():
     if recommend_type:
         if (
             not isinstance(recommend_type, str)
-            or recommend_type not in VALID_RECOMMEND_TYPES
+            or recommend_type not in valid_recommend_types
         ):
             return (
                 jsonify(
-                    error=f"Invalid recommend_type. Must be one of {VALID_RECOMMEND_TYPES}"
+                    error=f"Invalid recommend_type. Must be one of {valid_recommend_types}"
                 ),
                 status.HTTP_400_BAD_REQUEST,
             )
