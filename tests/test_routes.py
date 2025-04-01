@@ -431,7 +431,6 @@ class TestRecommendationService(TestCase):
     # ----------------------------------------------------------
     # TEST LINK
     # ----------------------------------------------------------
-
     def test_link_recommendation_product(self):
         """It should link a recommendation to a new recommended product"""
         # Create a recommendation first
@@ -463,38 +462,36 @@ class TestRecommendationService(TestCase):
         response = self.client.put(f"{BASE_URL}/9999/link/1234")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-           # Add after test_link_recommendation_not_found and before test_list_with_all_filters
-    
+        # Add after test_link_recommendation_not_found and before test_list_with_all_filters
+
     # ----------------------------------------------------------
     # TEST LIKE
     # ----------------------------------------------------------
-    
+
     def test_like_recommendation(self):
         """It should like a recommendation and increase its success count"""
         # Create a recommendation first
         recommendation = RecommendationFactory()
         response = self.client.post(BASE_URL, json=recommendation.serialize())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    
+
         # Fetch the created recommendation
         new_recommendation = response.get_json()
         initial_success = new_recommendation["rec_success"]
-        
+
         # Like the recommendation
         like_url = f"{BASE_URL}/{new_recommendation['id']}/like"
         response = self.client.patch(like_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         # Check that rec_success was incremented
         updated_recommendation = response.get_json()
         self.assertEqual(updated_recommendation["rec_success"], initial_success + 1)
-    
+
     def test_like_recommendation_not_found(self):
         """It should return 404 when liking a non-existent recommendation"""
         response = self.client.patch(f"{BASE_URL}/9999/like")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-
 
     def test_list_with_all_filters(self):
         """It should handle all filters in list recommendations"""
