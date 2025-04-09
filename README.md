@@ -1,4 +1,4 @@
-# NYU DevOps Project Template
+# NYU DevOps Project: Recommendations
 
 [![CI](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-SP25-003/recommendations/actions)
 
@@ -6,14 +6,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
-
-This is a skeleton you can use to start your projects.
-
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
-
-## Overview
-
-This project template contains **starter** code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
 
 ## Automatic Setup
 
@@ -283,6 +275,71 @@ flask shell
 >>> models.db.drop_all()    // Optional: if you need to reset the schema
 >>> models.db.create_all()
 ```
+
+---
+
+## Postgres Deployment
+
+This project includes a Kubernetes-based deployment of a PostgreSQL database to provide persistent storage for the Recommendation microservice.
+All Kubernetes-related configurations are located in the ./k8s directory:
+```
+k8s/
+├── deployment.yaml               # App deployment
+├── service.yaml                  # App service
+├── ingress.yaml                  # Ingress route
+└── postgres/
+    ├── postgres-deployment.yaml  # PostgreSQL StatefulSet
+    └── postgres-service.yaml     # PostgreSQL service
+```
+
+#### How to Deploy (Locally with K3s)
+
+Start a local K3s cluster (via Makefile):
+```
+make cluster
+```
+
+Build and push the app image:
+```
+make build
+make push
+```
+
+Apply PostgreSQL and app manifests:
+```
+kubectl apply -f k8s/postgres
+kubectl apply -f k8s
+```
+
+Check deployment status:
+```
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+```
+
+#### How to Test
+For local deployments, add the following to `/etc/hosts` on your computer. This is the address listed when run `kubectl get ingress`.
+```
+127.0.0.1 recommendation.local
+```
+
+Health Check (once deployed):
+```
+curl http://recommendation.local/health
+# Response: {"message":"Healthy","status":200}
+```
+
+Verify PostgreSQL is up:
+```
+kubectl exec -it postgres-0 -- psql -U postgres
+\c recommendation
+SELECT * FROM recommendation;
+# \l                 -- list databases
+# \dt                -- list tables (after app writes)
+# \c                 -- connect to a table
+```
+
 
 ## License
 
