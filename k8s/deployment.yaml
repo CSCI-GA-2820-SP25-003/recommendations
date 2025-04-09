@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recommendation
+  template:
+    metadata:
+      labels:
+        app: recommendation
+    spec:
+      containers:
+        - name: recommendation
+          image: cluster-registry:5000/recommendations:1.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URI
+              value: postgresql+psycopg://postgres:postgres@postgres:5432/recommendations
