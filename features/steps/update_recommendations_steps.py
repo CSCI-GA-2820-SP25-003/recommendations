@@ -46,12 +46,18 @@ def step_impl(context):
     # load the database with new recommendations
     for row in context.table:
         payload = {
+            "product_id": int(row["product_id"]),
             "name": row["product_name"],
             "recommendation_name": row["recommendation_name"],
-            "recommendation_id": row["recommendation_id"],
-            "recommendation_type": row["recommendation_type"],
-            "recommendation_in_stock": row["recommendation_in_stock"]
-            in ["True", "true", "1", "false", "0", "False"],
+            "recommend_product_id": int(row["recommendation_id"]),
+            "recommend_type": row["recommendation_type"],
+            # "recommendation_in_stock": row["recommendation_in_stock"]
+            # in ["True", "true", "1", "false", "0", "False"],
+            "recommendation_in_stock": row["recommendation_in_stock"].lower() in ["true", "1"],
+            "customer_id": int(row["customer_id"]),
+            "rec_success": True  # ✅ Add this line
+
         }
         context.resp = requests.post(rest_endpoint, json=payload)
+        print("POST response:", context.resp.status_code, context.resp.text)
         assert context.resp.status_code == HTTP_201_CREATED
