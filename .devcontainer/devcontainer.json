@@ -14,7 +14,7 @@
 					"pytest",
 					"pipenv",
 					"tekton",
-					"testdb"			
+					"testdb",			
 					"creds",
 					"virtualenvs",
 					"shopcarts"
@@ -32,6 +32,12 @@
 				"python.testing.pytestArgs": [
 					"tests"
 				],
+				"cucumberautocomplete.steps": ["features/steps/*.py"],
+				"cucumberautocomplete.syncfeatures": "features/*.feature",
+				"cucumberautocomplete.strictGherkinCompletion": true,
+				"cucumberautocomplete.strictGherkinValidation": true,
+				"cucumberautocomplete.smartSnippets": true,
+				"cucumberautocomplete.gherkinDefinitionPart": "@(given|when|then)\\(",
 				"files.exclude": {
 					"**/.git": true,
 					"**/.DS_Store": true,
