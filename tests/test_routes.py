@@ -439,6 +439,29 @@ class TestRecommendationService(TestCase):
         self.assertTrue(
             all(r["recommend_product_id"] == test_recommend_product_id for r in data)
         )
+# ----------------------------------------------------------
+    # TEST: ACTION ENDPOINT - ID NOT FOUND
+    # ----------------------------------------------------------
+    def test_action_customer_id_not_found(self):
+        """It should return an error for a customer id that doesn't exist"""
+        response = self.client.post(f"{BASE_URL}/0/action", json={"action": "suspend"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # ----------------------------------------------------------
+    # TEST: ACTION ENDPOINT - UNSUPPORTED ACTION
+    # ----------------------------------------------------------
+    def test_action_customer_invalid_action(self):
+        """It should return an error for an unsupported action on a customer"""
+        # Create a test customer
+        test_customer = self._create_customers(1)[0]
+        # Attempt an unsupported action
+        response = self.client.post(
+            f"{BASE_URL}/{test_customer.id}/action", json={"action": "invalid_action"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("not supported", data.get("message", ""))
+
 
     # ----------------------------------------------------------
     # TEST LINK

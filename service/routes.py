@@ -152,58 +152,93 @@ def create_recommendations():
 # LIST ALL RECOMMENDATIONS
 ######################################################################
 @app.route("/recommendations", methods=["GET"])
+# def list_recommendations():
+#     """Returns all of the Recommendations, with optional filtering"""
+#     app.logger.info("Request for recommendation list with filters")
+
+#     # Retrieve query parameters
+#     product_id = request.args.get("product_id")
+#     # customer_id = request.args.get("customer_id")
+#     recommend_type = request.args.get("recommend_type")
+#     recommend_product_id = request.args.get("recommend_product_id")
+
+#     query = Recommendation.query
+#     valid_recommend_types = ["up-sell", "down-sell", "cross-sell"]
+
+#     if product_id:
+#         if not product_id.isdigit():
+#             return jsonify(error="Invalid product_id"), status.HTTP_400_BAD_REQUEST
+#         query = query.filter(Recommendation.product_id == int(product_id))
+
+#     # if customer_id:
+#     #     if not customer_id.isdigit():
+#     #         return jsonify(error="Invalid customer_id"), status.HTTP_400_BAD_REQUEST
+#     #     query = query.filter(Recommendation.customer_id == int(customer_id))
+
+#     if recommend_type:
+#         if (
+#             not isinstance(recommend_type, str)
+#             or recommend_type not in valid_recommend_types
+#         ):
+#             return (
+#                 jsonify(
+#                     error=f"Invalid recommend_type. Must be one of {valid_recommend_types}"
+#                 ),
+#                 status.HTTP_400_BAD_REQUEST,
+#             )
+#         query = query.filter(Recommendation.recommend_type == recommend_type)
+
+#     if recommend_product_id:
+#         if not recommend_product_id.isdigit():
+#             return (
+#                 jsonify(error="Invalid recommend_product_id"),
+#                 status.HTTP_400_BAD_REQUEST,
+#             )
+#         query = query.filter(
+#             Recommendation.recommend_product_id == int(recommend_product_id)
+#         )
+
+#     recommendations = query.all()
+
+#     # Serialize and return the results
+#     results = [recommendation.serialize() for recommendation in recommendations]
+#     return jsonify(results), status.HTTP_200_OK
+
 def list_recommendations():
-    """Returns all of the Recommendations, with optional filtering"""
-    app.logger.info("Request for recommendation list with filters")
+    """Returns all of the recommendations"""
+    app.logger.info("Request for recommendations list")
 
-    # Retrieve query parameters
-    product_id = request.args.get("product_id")
-    customer_id = request.args.get("customer_id")
-    recommend_type = request.args.get("recommend_type")
-    recommend_product_id = request.args.get("recommend_product_id")
+    recommendations = []
 
-    query = Recommendation.query
-    valid_recommend_types = ["up-sell", "down-sell", "cross-sell"]
+    # See if any query filters were passed in
+    name = request.args.get("name")
+    in_stock = request.args.get("recommendation_in_stock")
+    recommendation_type = request.args.get("recommendation_type")
+    recommendation_name = request.args.get("recommendation_name")
+    recommendation_id = request.args.get("recommendation_id")
 
-    if product_id:
-        if not product_id.isdigit():
-            return jsonify(error="Invalid product_id"), status.HTTP_400_BAD_REQUEST
-        query = query.filter(Recommendation.product_id == int(product_id))
-
-    if customer_id:
-        if not customer_id.isdigit():
-            return jsonify(error="Invalid customer_id"), status.HTTP_400_BAD_REQUEST
-        query = query.filter(Recommendation.customer_id == int(customer_id))
-
-    if recommend_type:
-        if (
-            not isinstance(recommend_type, str)
-            or recommend_type not in valid_recommend_types
-        ):
-            return (
-                jsonify(
-                    error=f"Invalid recommend_type. Must be one of {valid_recommend_types}"
-                ),
-                status.HTTP_400_BAD_REQUEST,
-            )
-        query = query.filter(Recommendation.recommend_type == recommend_type)
-
-    if recommend_product_id:
-        if not recommend_product_id.isdigit():
-            return (
-                jsonify(error="Invalid recommend_product_id"),
-                status.HTTP_400_BAD_REQUEST,
-            )
-        query = query.filter(
-            Recommendation.recommend_product_id == int(recommend_product_id)
+    if name:
+        recommendations = Recommendation.find_by_name(name)
+    elif in_stock:
+        app.logger.info("Find by in_stock: %s", in_stock)
+        # create bool from string
+        available_value = in_stock.lower() in ["true", "yes", "1"]
+        recommendations = Recommendation.find_by_in_stock(available_value)
+    elif recommendation_type:
+        recommendations = Recommendation.find_by_type(recommendation_type)
+    elif recommendation_name:
+        recommendations = Recommendation.find_by_recommendation_name(
+            recommendation_name
         )
+    elif recommendation_id:
+        recommendation_id = int(recommendation_id)
+        recommendations = Recommendation.find_by_recommendation_id(recommendation_id)
+    else:
+        recommendations = Recommendation.all()
 
-    recommendations = query.all()
-
-    # Serialize and return the results
     results = [recommendation.serialize() for recommendation in recommendations]
+    app.logger.info("Returning %d recommendations", len(results))
     return jsonify(results), status.HTTP_200_OK
-
 
 ######################################################################
 # READ A RECOMMENDATION

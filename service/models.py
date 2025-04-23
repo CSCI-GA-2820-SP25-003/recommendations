@@ -37,7 +37,7 @@ class Recommendation(db.Model):
     customer_id = db.Column(db.Integer, nullable=False)
     recommend_type = db.Column(db.String(63), nullable=False)
     recommend_product_id = db.Column(db.Integer, nullable=False)
-    rec_success = db.Column(db.Integer, default=0, nullable=False)
+    # rec_success = db.Column(db.Integer, default=0, nullable=False)
 
     def __repr__(self):
         return f"<Recommendation product_id={self.product_id},\
