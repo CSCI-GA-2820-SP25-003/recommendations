@@ -17,7 +17,7 @@ class DataValidationError(Exception):
     """Used for any data validation errors when deserializing"""
 
 
-class Recommendation(db.Model):
+class Recommendation(db.Model):  # pylint: disable=too-many-instance-attributes
     """
     Class that represents a Recommendation
     Table Schema

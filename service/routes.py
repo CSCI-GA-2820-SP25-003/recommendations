@@ -151,7 +151,7 @@ def create_recommendations():
 # LIST ALL RECOMMENDATIONS
 ######################################################################
 @app.route("/recommendations", methods=["GET"])
-def list_recommendations():
+def list_recommendations():  # pylint: disable=too-many-branches, too-many-return-statements
     """Returns all of the Recommendations, with optional filtering"""
     app.logger.info("Request for recommendation list with filters")
 
