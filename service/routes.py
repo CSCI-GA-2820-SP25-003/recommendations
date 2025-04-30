@@ -332,13 +332,10 @@ def link_recommendation_product(recommendation_id, recommend_product_id):
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
-@app.route("/recommendations/<int:recommendation_id>/like", methods=["PATCH"])
+@app.route("/recommendations/<int:recommendation_id>/like", methods=["PUT"])
 def like_recommendation(recommendation_id):
-    """
-    Like a recommendation
-    This endpoint will increase the success count (rec_success) of a recommendation
-    """
-    app.logger.info("Request to like recommendation with id: %d", recommendation_id)
+    """Increments the success rate of a recommendation by 1"""
+    app.logger.info("Request to LIKE recommendation with id [%s]", recommendation_id)
 
     recommendation = Recommendation.find(recommendation_id)
     if not recommendation:
@@ -347,15 +344,31 @@ def like_recommendation(recommendation_id):
             f"Recommendation with id '{recommendation_id}' was not found.",
         )
 
-    # Increment the recommendation success counter
-    recommendation.rec_success += 1
-    recommendation.update()
+    if recommendation.rec_success < 100:
+        recommendation.rec_success += 1
+        recommendation.update()
 
-    app.logger.info(
-        "Recommendation %d liked, success count increased to %d",
-        recommendation_id,
-        recommendation.rec_success,
-    )
+    return jsonify(recommendation.serialize()), status.HTTP_200_OK
+
+
+@app.route("/recommendations/<int:recommendation_id>/dislike", methods=["PUT"])
+def dislike_recommendation(recommendation_id):
+    """
+    Dislike a recommendation (decrement its success score by 1)
+    """
+    app.logger.info("Disliking recommendation with id [%s]", recommendation_id)
+
+    recommendation = Recommendation.find(recommendation_id)
+    if not recommendation:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id '{recommendation_id}' was not found.",
+        )
+
+    # Prevent negative values if needed
+    if recommendation.rec_success > 0:
+        recommendation.rec_success -= 1
+        recommendation.update()
 
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 

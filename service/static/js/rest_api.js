@@ -247,6 +247,49 @@ $(function () {
     });
 
     // ****************************************
+    // Like a Recommendation (increment success)
+    // ****************************************
+    $("#like-btn").click(function () {
+        let id = $("#update_id").val().trim();
+        if (!id) {
+            flash_message("Please provide a valid internal ID to like a recommendation.");
+            return;
+        }
+
+        flash_message("");
+
+        $.ajax({
+            type: "PUT",
+            url: `/recommendations/${id}/like`,
+            contentType: "application/json",
+        }).done(function(res){
+            $("#update_rec_success").val(res.rec_success); // optionally update the success rate
+            flash_message("Liked! Success rate increased.");
+        }).fail(function(res){
+            flash_message(res.responseJSON.message || "Like operation failed.");
+        });
+    });
+
+    $("#dislike-btn").click(function () {
+        let id = $("#update_id").val().trim();
+        if (!id) {
+            flash_message("Please provide a valid internal ID to dislike a recommendation.");
+            return;
+        }
+    
+        $.ajax({
+            type: "PUT",
+            url: `/recommendations/${id}/dislike`,
+            contentType: "application/json",
+        }).done(function (res) {
+            flash_message("Disliked! Success rate decreased.");
+            update_form_data(res);
+        }).fail(function (res) {
+            flash_message(res.responseJSON.message || "Dislike operation failed.");
+        });
+    });
+
+    // ****************************************
     // Delete a Recommendation by ID
     // ****************************************
     $("#delete-id-btn").click(function () {
