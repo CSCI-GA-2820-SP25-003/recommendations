@@ -33,10 +33,12 @@ class Recommendation(db.Model):
     # Table Schema
     ##################################################
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, nullable=False)
     customer_id = db.Column(db.Integer, nullable=False)
-    recommend_type = db.Column(db.String(63), nullable=False)
+    product_id = db.Column(db.Integer, nullable=False)
+    product_name = db.Column(db.String(63), nullable=False)
     recommend_product_id = db.Column(db.Integer, nullable=False)
+    recommendation_name = db.Column(db.String(63), nullable=False)
+    recommend_type = db.Column(db.String(63), nullable=False)
     rec_success = db.Column(db.Integer, default=0, nullable=False)
 
     def __repr__(self):
@@ -84,10 +86,12 @@ class Recommendation(db.Model):
         """Serializes a Recommendation into a dictionary"""
         return {
             "id": self.id,
-            "product_id": self.product_id,
             "customer_id": self.customer_id,
-            "recommend_type": self.recommend_type,
+            "product_id": self.product_id,
+            "product_name": self.product_name,
+            "recommendation_name": self.recommendation_name,
             "recommend_product_id": self.recommend_product_id,
+            "recommend_type": self.recommend_type,
             "rec_success": self.rec_success,
         }
 
@@ -99,10 +103,12 @@ class Recommendation(db.Model):
             data (dict): A dictionary containing the resource data
         """
         try:
-            self.product_id = data["product_id"]
             self.customer_id = data["customer_id"]
-            self.recommend_type = data["recommend_type"]
+            self.product_id = data["product_id"]
+            self.product_name = data["product_name"]
             self.recommend_product_id = data["recommend_product_id"]
+            self.recommendation_name = data["recommendation_name"]
+            self.recommend_type = data["recommend_type"]
             self.rec_success = data["rec_success"]
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0]) from error
@@ -198,3 +204,151 @@ class Recommendation(db.Model):
             "Processing recommend_product_id query for %s ...", recommend_product_id
         )
         return cls.query.filter(cls.recommend_product_id == recommend_product_id).all()
+
+    @classmethod
+    def find_by_product_name(cls, product_name: str) -> list:
+        """
+        Finds all Recommendations with a specific product_name
+
+        :param product_name: the product_name to search for
+        :type product_name: str
+
+        :return: a list of Recommendations with that product_name
+        :rtype: list
+        """
+        logger.info("Processing product_name query for %s ...", product_name)
+        return cls.query.filter(cls.product_name == product_name).all()
+
+    @classmethod
+    def find_by_recommendation_name(cls, recommendation_name: str) -> list:
+        """
+        Finds all Recommendations with a specific recommendation_name
+
+        :param recommendation_name: the recommendation_name to search for
+        :type recommendation_name: str
+
+        :return: a list of Recommendations with that recommendation_name
+        :rtype: list
+        """
+        logger.info(
+            "Processing recommendation_name query for %s ...", recommendation_name
+        )
+        return cls.query.filter(cls.recommendation_name == recommendation_name).all()
+
+    @classmethod
+    def find_by_rec_success(cls, rec_success: int) -> list:
+        """
+        Finds all Recommendations with a specific rec_success
+
+        :param rec_success: the rec_success to search for
+        :type rec_success: int
+
+        :return: a list of Recommendations with that rec_success
+        :rtype: list
+        """
+        logger.info("Processing rec_success query for %s ...", rec_success)
+        return cls.query.filter(cls.rec_success == rec_success).all()
+
+
+def seed_data():
+    """Insert initial seed data into the database (only if empty)"""
+    if Recommendation.query.count() == 0:
+        logger.info("Seeding the database with initial data...")
+
+        sample_recommendations = [
+            {
+                "product_id": 101,
+                "customer_id": 1,
+                "product_name": "laptop",
+                "recommendation_name": "mouse",
+                "recommend_product_id": 301,
+                "recommend_type": "Down-Sell",
+                "rec_success": 75,
+            },
+            {
+                "product_id": 102,
+                "customer_id": 2,
+                "product_name": "phone",
+                "recommendation_name": "earbuds",
+                "recommend_product_id": 302,
+                "recommend_type": "Down-Sell",
+                "rec_success": 65,
+            },
+            {
+                "product_id": 103,
+                "customer_id": 3,
+                "product_name": "camera",
+                "recommendation_name": "tripod",
+                "recommend_product_id": 303,
+                "recommend_type": "Cross-Sell",
+                "rec_success": 55,
+            },
+            {
+                "product_id": 104,
+                "customer_id": 4,
+                "product_name": "tablet",
+                "recommendation_name": "stylus",
+                "recommend_product_id": 304,
+                "recommend_type": "Up-Sell",
+                "rec_success": 45,
+            },
+            {
+                "product_id": 105,
+                "customer_id": 5,
+                "product_name": "monitor",
+                "recommendation_name": "stand",
+                "recommend_product_id": 305,
+                "recommend_type": "Cross-Sell",
+                "rec_success": 60,
+            },
+            {
+                "product_id": 106,
+                "customer_id": 6,
+                "product_name": "keyboard",
+                "recommendation_name": "wrist rest",
+                "recommend_product_id": 306,
+                "recommend_type": "Down-Sell",
+                "rec_success": 35,
+            },
+            {
+                "product_id": 107,
+                "customer_id": 7,
+                "product_name": "chair",
+                "recommendation_name": "lumbar support",
+                "recommend_product_id": 307,
+                "recommend_type": "Up-Sell",
+                "rec_success": 85,
+            },
+            {
+                "product_id": 108,
+                "customer_id": 8,
+                "product_name": "router",
+                "recommendation_name": "ethernet cable",
+                "recommend_product_id": 308,
+                "recommend_type": "Cross-Sell",
+                "rec_success": 50,
+            },
+            {
+                "product_id": 109,
+                "customer_id": 9,
+                "product_name": "printer",
+                "recommendation_name": "ink cartridge",
+                "recommend_product_id": 309,
+                "recommend_type": "Down-Sell",
+                "rec_success": 70,
+            },
+            {
+                "product_id": 110,
+                "customer_id": 10,
+                "product_name": "tv",
+                "recommendation_name": "soundbar",
+                "recommend_product_id": 310,
+                "recommend_type": "Up-Sell",
+                "rec_success": 90,
+            },
+        ]
+
+        for data in sample_recommendations:
+            rec = Recommendation()
+            rec.deserialize(data)
+            rec.create()

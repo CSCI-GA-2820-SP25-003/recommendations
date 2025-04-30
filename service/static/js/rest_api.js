@@ -4,304 +4,313 @@ $(function () {
     //  U T I L I T Y   F U N C T I O N S
     // ****************************************
 
-    // Updates the form with data from the response
     function update_form_data(res) {
-        $("#product_id").val(res.id);
-        $("#product_name").val(res.name);
-        if (res.recommendation_in_stock == true) {
-            $("#recommendation_in_stock").val("true");
-        } else {
-            $("#recommendation_in_stock").val("false");
-        }
-        $("#recommendation_id").val(res.recommendation_id);
+        $("#product_id").val(res.product_id);
+        $("#customer_id").val(res.customer_id);
+        $("#product_name").val(res.product_name);
         $("#recommendation_name").val(res.recommendation_name);
-        $("#recommendation_type").val(res.recommendation_type);
+        $("#recommend_product_id").val(res.recommend_product_id);
+        $("#recommend_type").val(res.recommend_type);
+        $("#rec_success").val(res.rec_success);
     }
 
-    /// Clears all form fields
     function clear_form_data() {
         $("#product_id").val("");
+        $("#customer_id").val("");
         $("#product_name").val("");
-        $("#recommendation_in_stock").val("");
-        $("#recommendation_id").val("");
         $("#recommendation_name").val("");
-        $("#recommendation_type").val("");
+        $("#recommend_product_id").val("");
+        $("#recommend_type").val("Select");
+        $("#rec_success").val("");
     }
 
-    // Updates the flash message area
-    function flash_message(message) {
-        $("#flash_message").empty();
-        $("#flash_message").append(message);
+    function flash_message(message, type = "info") {
+        const alertClass = `alert-${type}`;
+        const container = $("#flash_container");
+    
+        container
+            .removeClass("alert-info alert-success alert-warning alert-danger")
+            .addClass(alertClass)
+            .fadeIn();
+    
+        $("#flash_message").html(message);
+    
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            container.fadeOut("slow");
+        }, 10000);
+    }
+
+    function listAllRecommendations() {
+        let ajax = $.ajax({
+            type: "GET",
+            url: "/recommendations",
+            contentType: "application/json",
+        });
+
+        ajax.done(function(res){
+            $("#search_results tbody").empty();
+            for (let rec of res) {
+                let row = `<tr>
+                    <td>${rec.id}</td>
+                    <td>${rec.product_id}</td>
+                    <td>${rec.customer_id}</td>
+                    <td>${rec.product_name}</td>
+                    <td>${rec.recommendation_name}</td>
+                    <td>${rec.recommend_product_id}</td>
+                    <td>${rec.recommend_type}</td>
+                    <td>${rec.rec_success}</td>
+                </tr>`;
+                $("#search_results tbody").append(row);
+            }
+            flash_message("Success", "success");
+        });
+
+        ajax.fail(function(res){
+            flash_message("Server error while listing items!", "danger");
+        });
     }
 
     // ****************************************
     // Create a Recommendation
     // ****************************************
-
     $("#create-btn").click(function () {
-
-        let name = $("#product_name").val();
-        let recommendation_in_stock = $("#recommendation_in_stock").val() == "true";
-        let recommendation_name = $("#recommendation_name").val();
-        let recommendation_id = $("#recommendation_id").val();
-        let recommendation_type = $("#recommendation_type").val();
-
         let data = {
-            "name": name,
-            "recommendation_in_stock":recommendation_in_stock,
-            "recommendation_name": recommendation_name,
-            "recommendation_id": recommendation_id,
-            "recommendation_type": recommendation_type
+            product_id: parseInt($("#product_id").val()),
+            customer_id: parseInt($("#customer_id").val()),
+            product_name: $("#product_name").val(),
+            recommendation_name: $("#recommendation_name").val(),
+            recommend_product_id: parseInt($("#recommend_product_id").val()),
+            recommend_type: $("#recommend_type").val(),
+            rec_success: parseInt($("#rec_success").val())
         };
 
-        $("#flash_message").empty();
-        
-        let ajax = $.ajax({
+        flash_message("");
+
+        $.ajax({
             type: "POST",
             url: "/recommendations",
             contentType: "application/json",
             data: JSON.stringify(data),
+        }).done(function(res){
+            update_form_data(res);
+            flash_message("Success", "success");
+        }).fail(function(res){
+            flash_message(res.responseJSON.message);
         });
-
-        ajax.done(function(res){
-            update_form_data(res)
-            flash_message("Success")
-        });
-
-        ajax.fail(function(res){
-            flash_message(res.responseJSON.message)
-        });
-    });
-
-
-    // ****************************************
-    // Update a Recommendation
-    // ****************************************
-
-    $("#update-btn").click(function () {
-
-        let product_id = $("#product_id").val();
-        let name = $("#product_name").val();
-        let recommendation_in_stock = $("#recommendation_in_stock").val() == "true";
-        let recommendation_name = $("#recommendation_name").val();
-        let recommendation_id = $("#recommendation_id").val();
-        let recommendation_type = $("#recommendation_type").val();
-
-        let data = {
-            "name": name,
-            "recommendation_in_stock": recommendation_in_stock,
-            "recommendation_name": recommendation_name,
-            "recommendation_id": recommendation_id,
-            "recommendation_type": recommendation_type
-        };
-
-        $("#flash_message").empty();
-
-        let ajax = $.ajax({
-                type: "PUT",
-                url: `/recommendations/${product_id}`,
-                contentType: "application/json",
-                data: JSON.stringify(data)
-            })
-
-        ajax.done(function(res){
-            update_form_data(res)
-            flash_message("Success")
-        });
-
-        ajax.fail(function(res){
-            flash_message(res.responseJSON.message)
-        });
-
     });
 
     // ****************************************
     // Retrieve a Recommendation
     // ****************************************
-
     $("#retrieve-btn").click(function () {
+        let recommendation_id = $("#read_id").val();
 
-        let product_id = $("#product_id").val();
+        flash_message("");
 
-        $("#flash_message").empty();
-
-        let ajax = $.ajax({
+        $.ajax({
             type: "GET",
-            url: `/recommendations/${product_id}`,
+            url: `/recommendations/${recommendation_id}`,
             contentType: "application/json",
-            data: ''
-        })
-
-        ajax.done(function(res){
-            //alert(res.toSource())
-            update_form_data(res)
-            flash_message("Success")
-        });
-
-        ajax.fail(function(res){
-            clear_form_data()
-            flash_message(res.responseJSON.message)
-        });
-
-    });
-
-    // ****************************************
-    // Delete a Recommendation
-    // ****************************************
-
-    $("#delete-btn").click(function () {
-
-        let product_id = $("#product_id").val();
-
-        $("#flash_message").empty();
-
-        let ajax = $.ajax({
-            type: "DELETE",
-            url: `/recommendations/${product_id}`,
-            contentType: "application/json",
-            data: '',
-        })
-
-        ajax.done(function(res){
-            clear_form_data()
-            flash_message("Recommendation has been Deleted!")
-        });
-
-        ajax.fail(function(res){
-            flash_message("Server error!")
+        }).done(function(res){
+            $("#search_results tbody").empty();
+            let row = `<tr>
+                <td>${res.id}</td>
+                <td>${res.product_id}</td>
+                <td>${res.customer_id}</td>
+                <td>${res.product_name}</td>
+                <td>${res.recommendation_name}</td>
+                <td>${res.recommend_product_id}</td>
+                <td>${res.recommend_type}</td>
+                <td>${res.rec_success}</td>
+            </tr>`;
+            $("#search_results tbody").append(row);
+            flash_message("Success", "success");
+        }).fail(function(res){
+            $("#search_results tbody").empty();
+            flash_message(res.responseJSON.message);
         });
     });
 
     // ****************************************
-    // Restock a Recommendation
+    // Search Recommendations with Filters
     // ****************************************
-    $("#restock-btn").click(function () {
-
-        let product_id = $("#product_id").val();
-
-        $("#flash_message").empty();
-
-        let ajax = $.ajax({
-                type: "PUT",
-                url: `/recommendations/${product_id}/restock`,
-                contentType: "application/json",
-                data: ''
-            })
-
-        ajax.done(function(res){
-            update_form_data(res)
-            flash_message("Success")
-        });
-
-        ajax.fail(function(res){
-            flash_message(res.responseJSON.message)
-        });
-
-    });
-
-    // ****************************************
-    // Clear the form
-    // ****************************************
-
-    $("#clear-btn").click(function () {
-        $("#product_id").val("");
-        $("#flash_message").empty();
-        clear_form_data()
-    });
-
-    // ****************************************
-    // Search for a Recommendation
-    // ****************************************
-
-    $("#search-btn").click(function () {
-
-        let name = $("#product_name").val();
-        let recommendation_in_stock = $("#recommendation_in_stock").val();
-        let recommendation_name = $("#recommendation_name").val();
-        let recommendation_type = $("#recommendation_type").val();
-        let recommendation_id = $("#recommendation_id").val();
-
-        let queryString = ""
-
-        if (name) {
-            queryString += 'name=' + name
-        }
-
-        if (recommendation_in_stock) {
-            if (queryString.length > 0) {
-                queryString += '&recommendation_in_stock=' + recommendation_in_stock
-            } else {
-                queryString += 'recommendation_in_stock=' + recommendation_in_stock
+    $("#filter-search-btn").click(function () {
+        let query = [];
+        let product_id = $("#read_product_id").val();
+        let customer_id = $("#read_customer_id").val();
+        let recommend_product_id = $("#read_recommend_product_id").val();
+        let recommend_type = $("#read_recommend_type").val();
+        let product_name = $("#read_product_name").val();
+        let recommendation_name = $("#read_recommendation_name").val();
+        let rec_success_min = $("#rec_success_min").val();
+        let rec_success_max = $("#rec_success_max").val();
+    
+        if (product_id) query.push(`product_id=${product_id}`);
+        if (customer_id) query.push(`customer_id=${customer_id}`);
+        if (recommend_product_id) query.push(`recommend_product_id=${recommend_product_id}`);
+        if (recommend_type && recommend_type !== "Select" && recommend_type !== "Any") query.push(`recommend_type=${recommend_type}`);
+        if (product_name) query.push(`product_name=${product_name}`);
+        if (recommendation_name) query.push(`recommendation_name=${recommendation_name}`);
+        if (rec_success_min && rec_success_max) {
+            let minVal = parseInt(rec_success_min);
+            let maxVal = parseInt(rec_success_max);
+        
+            if (isNaN(minVal) || isNaN(maxVal)) {
+                flash_message("Please enter valid numeric values for success rate range.", "warning");
+                return;
             }
-        }
-
-        if (recommendation_name) {
-            if (queryString.length > 0) {
-                queryString += '&recommendation_name=' + recommendation_name
-            } else {
-                queryString += 'recommendation_name=' + recommendation_name
+        
+            if (minVal > maxVal) {
+                flash_message("Why is the minimum greater than the maximum?", "warning");
+                return;
             }
-        }
-        if (recommendation_type) {
-            if (queryString.length > 0) {
-                queryString += '&recommendation_type=' + recommendation_type
-            } else {
-                queryString += 'recommendation_type=' + recommendation_type
-            }
+        
+            query.push(`rec_success_min=${minVal}`);
+            query.push(`rec_success_max=${maxVal}`);
+        } else if (rec_success_min || rec_success_max) {
+            flash_message("Please enter both minimum and maximum values.", "warning");
+            return;
         }
         
-        if (recommendation_id) {
-            if (queryString.length > 0) {
-                queryString += '&recommendation_id=' + recommendation_id
-            } else {
-                queryString += 'recommendation_id=' + recommendation_id
+        
+    
+        let queryString = query.length > 0 ? `?${query.join("&")}` : "";
+    
+        flash_message("");
+    
+        $.ajax({
+            type: "GET",
+            url: `/recommendations${queryString}`,
+            contentType: "application/json",
+        }).done(function(res){
+            $("#search_results tbody").empty();
+            for (let rec of res) {
+                let row = `<tr>
+                    <td>${rec.id}</td>
+                    <td>${rec.product_id}</td>
+                    <td>${rec.customer_id}</td>
+                    <td>${rec.product_name}</td>
+                    <td>${rec.recommendation_name}</td>
+                    <td>${rec.recommend_product_id}</td>
+                    <td>${rec.recommend_type}</td>
+                    <td>${rec.rec_success}</td>
+                </tr>`;
+                $("#search_results tbody").append(row);
             }
+            flash_message("Success", "success");
+        }).fail(function(res){
+            $("#search_results tbody").empty();
+            flash_message(res.responseJSON.message);
+        });
+    });    
+
+    // ****************************************
+    // Update a Recommendation
+    // ****************************************
+    $("#update-btn").click(function () {
+        let id = $("#update_id").val().trim();
+        if (!id) {
+            flash_message("Please enter a valid ID to update.", "warning");
+            return;
         }
 
-        $("#flash_message").empty();
+        let data = {};
+        let product_id = $("#update_product_id").val().trim();
+        let customer_id = $("#update_customer_id").val().trim();
+        let product_name = $("#update_product_name").val().trim();
+        let recommendation_name = $("#update_recommendation_name").val().trim();
+        let recommend_product_id = $("#update_recommend_product_id").val().trim();
+        let recommend_type = $("#update_recommend_type").val();
+        let rec_success = $("#update_rec_success").val().trim();
 
-        let ajax = $.ajax({
-            type: "GET",
-            url: `/recommendations?${queryString}`,
+        if (product_id !== "") data.product_id = parseInt(product_id);
+        if (customer_id !== "") data.customer_id = parseInt(customer_id);
+        if (product_name !== "") data.product_name = product_name;
+        if (recommendation_name !== "") data.recommendation_name = recommendation_name;
+        if (recommend_product_id !== "") data.recommend_product_id = parseInt(recommend_product_id);
+        if (recommend_type !== "" && recommend_type !== "Select") data.recommend_type = recommend_type;
+        if (rec_success !== "") data.rec_success = parseInt(rec_success);
+
+        flash_message("");
+
+        $.ajax({
+            type: "PUT",
+            url: `/recommendations/${id}`,
             contentType: "application/json",
-            data: ''
-        })
-
-        ajax.done(function(res){
-            //alert(res.toSource())
-            $("#search_results").empty();
-            let table = '<table class="table table-striped" cellpadding="10">'
-            table += '<thead><tr>'
-            table += '<th class="col-md-2">ID</th>'
-            table += '<th class="col-md-2">Name</th>'
-            table += '<th class="col-md-2">Recommendation ID</th>'
-            table += '<th class="col-md-2">Recommendation Name</th>'
-            table += '<th class="col-md-2">Recommendation Type</th>'
-            table += '<th class="col-md-2">In Stock</th>'
-            table += '</tr></thead><tbody>'
-            let firstRecommendation = "";
-            for(let i = 0; i < res.length; i++) {
-                let recommendation = res[i];
-                table +=  `<tr id="row_${i}"><td>${recommendation.id}</td><td>${recommendation.name}</td><td>${recommendation.recommendation_id}</td><td>${recommendation.recommendation_name}</td><td>${recommendation.recommendation_type}</td><td>${recommendation.recommendation_in_stock}</td></tr>`;
-                if (i == 0) {
-                    firstRecommendation = recommendation;
-                }
-            }
-            table += '</tbody></table>';
-            $("#search_results").append(table);
-
-            // copy the first result to the form
-            if (firstRecommendation != "") {
-                update_form_data(firstRecommendation)
-            }
-
-            flash_message("Success")
+            data: JSON.stringify(data),
+        }).done(function(res){
+            flash_message("Update success!", "success");
+        }).fail(function(res){
+            flash_message(res.responseJSON.message || "Update failed.");
         });
-
-        ajax.fail(function(res){
-            flash_message(res.responseJSON.message)
-        });
-
     });
 
-})
+    // ****************************************
+    // Delete a Recommendation by ID
+    // ****************************************
+    $("#delete-id-btn").click(function () {
+        let id = $("#delete_id").val();
+
+        flash_message("");
+
+        $.ajax({
+            type: "DELETE",
+            url: `/recommendations/${id}`,
+            contentType: "application/json",
+        }).done(function(res){
+            $("#delete_id").val("");
+            flash_message("Recommendation deleted successfully.", "success");
+        }).fail(function(res){
+            flash_message("Delete failed! Could not find recommendation.", "danger");
+        });
+    });
+
+    // ****************************************
+    // Clear Buttons
+    // ****************************************
+    $("#clear-btn").click(function () {
+        flash_message("");
+        clear_form_data();
+    });
+
+    $("#clear-read-btn").click(function () {
+        $("#read_id").val("");
+        $("#read_product_id").val("");
+        $("#read_customer_id").val("");
+        $("#read_recommend_product_id").val("");
+        $("#read_recommend_type").val("Select");
+        $("#read_product_name").val("");
+        $("#read_recommendation_name").val("");
+        $("#read_rec_success").val("");
+        $("#flash_message").empty();
+        $("#search_results tbody").empty();
+    });    
+
+    $("#clear-update-btn").click(function () {
+        $("#update_id").val("");
+        $("#update_product_id").val("");
+        $("#update_customer_id").val("");
+        $("#update_product_name").val("");
+        $("#update_recommendation_name").val("");
+        $("#update_recommend_product_id").val("");
+        $("#update_recommend_type").val("Select");
+        $("#update_rec_success").val("");
+        $("#flash_message").empty();
+        $("#search_results tbody").empty();
+    });
+
+    $("#clear-delete-btn").click(function () {
+        $("#delete_id").val("");
+        flash_message("");
+    });
+
+    // ****************************************
+    // List Buttons
+    // ****************************************
+    $("#list-btn").click(listAllRecommendations);
+    $("#list-read-btn").click(listAllRecommendations);
+    $("#list-update-btn").click(listAllRecommendations);
+    $("#list-delete-btn").click(listAllRecommendations);
+
+});

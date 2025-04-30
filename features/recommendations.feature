@@ -1,37 +1,55 @@
-Feature: Recommendations Service
+Feature: Recommendation Service
 
-Background:
+  Background:
     Given the following recommendations
+<<<<<<< HEAD
         | product_id | product_name | recommendation_name | recommendation_id  | recommendation_type | recommendation_in_stock | customer_id |
         | 1          | cake         | cookie              | 123                | CROSS_SELL          | True                    | 1           |
         | 2          | Lemon        | Orange              | 321                | CROSS_SELL          | False                   | 1           |
         | 3          | pineapple    | Mango               | 456                | CROSS_SELL          | True                    | 1           |
         | 4          | Water        | Sparkling Water     | 654                | UP_SELL             | True                    | 1           |
         | 5          | sprite       | Coke                | 111                | CROSS_SELL          | False                   | 1           |
+=======
+        | id | product_id | customer_id | product_name | recommendation_name | recommend_product_id | recommend_type | rec_success |
+        | 1  | 1          | 101         | cake         | cookie              | 123                  | Cross-Sell     | 1           |
+        | 2  | 2          | 102         | lemon        | orange              | 321                  | Cross-Sell     | 0           |
+        | 3  | 3          | 103         | pineapple    | mango               | 456                  | Cross-Sell     | 1           |
+        | 4  | 4          | 104         | water        | sparkling water     | 654                  | Up-Sell        | 1           |
+        | 5  | 5          | 105         | sprite       | coke                | 111                  | Cross-Sell     | 0           |
+>>>>>>> 5ba7760 (Completed UI integration with full CRUD, filtering, validation, and test coverage)
 
-Scenario: The server is running
+  Scenario: The server is running
     When I visit the "Home Page"
     Then I should see "Recommendation Demo RESTful Service" in the title
     And I should not see "404 Not Found"
 
-#CREATE
-Scenario: Create a Recommendation
+  Scenario: Create a Recommendation
     When I visit the "Home Page"
-    And I set the "product_name" to "cake"
-    And I select "CROSS_SELL" in the "recommendation_type" dropdown
-    And I set the "recommendation_name" to "cookie"
-    And I set the "recommendation_id" to "123"
+    And I switch to the "Create" tab
+    And I set the "product_id" to "6"
+    And I set the "customer_id" to "201"
+    And I set the "product_name" to "chips"
+    And I set the "recommendation_name" to "dip"
+    And I set the "recommend_product_id" to "888"
+    And I select "Cross-Sell" in the "recommend_type" dropdown
+    And I set the "rec_success" to "1"
     And I press the "Create" button
     Then I should see the message "Success"
-    When I copy the "product_id" field
-    And I press the "Clear" button
-    Then the "product_id" field should be empty
-    And the "product_name" field should be empty
-    And the "recommendation_type" field should be empty
-    And the "recommendation_name" field should be empty
-    And the "recommendation_id" field should be empty
-    When I paste the "product_id" field
+
+  Scenario: List all Recommendations
+    When I visit the "Home Page"
+    And I switch to the "Read" tab
+    And I press the "List Read" button
+    Then I should see "cake" in the results
+    And I should see "lemon" in the results
+    And I should see "sprite" in the results
+
+  Scenario: Retrieve by ID
+    When I visit the "Home Page"
+    And I switch to the "Read" tab
+    And I set the "read_id" to "27"
     And I press the "Retrieve" button
+<<<<<<< HEAD
     Then I should see "cake" in the "product_name" field
     And I should see "CROSS_SELL" in the "recommendation_type" field
     And I should see "cookie" in the "recommendation_name" field
@@ -179,3 +197,46 @@ Scenario: Create a Recommendation
 #     And I should not see "keyboard" in the "recommendation_name" field
 #     And I should not see "777" in the "recommendation_id" field
 #     And I should not see "true" in the "recommendation_in_stock" field
+=======
+    Then I should see "cake" in the results
+
+  Scenario: Filter by Recommendation Type
+    When I visit the "Home Page"
+    And I switch to the "Read" tab
+    And I select "Cross-Sell" in the "recommend_type" dropdown
+    And I press the "Filter Search" button
+    Then I should see "lemon" in the results
+    And I should not see "water" in the results
+
+  Scenario: Filter by Product Name
+    When I visit the "Home Page"
+    And I switch to the "Read" tab
+    And I set the "read_product_name" to "cake"
+    And I press the "Filter Search" button
+    Then I should see "cake" in the results
+    And I should not see "lemon" in the results
+
+  Scenario: Filter by Success Rate Range
+    When I visit the "Home Page"
+    And I switch to the "Read" tab
+    And I set the "rec_success_min" to "1"
+    And I set the "rec_success_max" to "1"
+    And I press the "Filter Search" button
+    Then I should see "cake" in the results
+    And I should not see "lemon" in the results
+
+  Scenario: Update a Recommendation
+    When I visit the "Home Page"
+    And I switch to the "Update" tab
+    And I set the "update_id" to "47"
+    And I set the "update_product_name" to "treat"
+    And I press the "Update" button
+    Then I should see the message "Update success!"
+
+  Scenario: Delete a Recommendation
+    When I visit the "Home Page"
+    And I switch to the "Delete" tab
+    And I set the "delete_id" to "53"
+    And I press the "Delete ID" button
+    Then I should see the message "Recommendation deleted successfully."
+>>>>>>> 5ba7760 (Completed UI integration with full CRUD, filtering, validation, and test coverage)

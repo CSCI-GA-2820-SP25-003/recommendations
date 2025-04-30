@@ -1,49 +1,51 @@
-######################################################################
-# Copyright 2016, 2023 John J. Rofrano. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-######################################################################
+# steps.py
+# Combined Behave step definitions for API setup and Selenium UI interactions
 
-# pylint: disable=function-redefined, missing-function-docstring
-# flake8: noqa
-"""
-Web Steps
-
-Steps file for web interactions with Selenium
-
-For information on Waiting until elements are present in the HTML see:
-    https://selenium-python.readthedocs.io/waits.html
-"""
 import logging
-from behave import when, then
+import requests
+from behave import given, when, then
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
+# Constants
+HTTP_200_OK = 200
+HTTP_201_CREATED = 201
+HTTP_204_NO_CONTENT = 204
 ID_PREFIX = ""
+
+
+@given("the following recommendations")
+def step_impl(context):
+    """Delete all Recommendations and load new ones"""
+    rest_endpoint = f"{context.base_url}/recommendations"
+    context.resp = requests.get(rest_endpoint)
+    assert context.resp.status_code == HTTP_200_OK
+    for recommendation in context.resp.json():
+        context.resp = requests.delete(f"{rest_endpoint}/{recommendation['id']}")
+        assert context.resp.status_code == HTTP_204_NO_CONTENT
+
+    for row in context.table:
+        payload = {
+            "product_id": int(row["product_id"]),
+            "customer_id": int(row["customer_id"]),
+            "product_name": row["product_name"],
+            "recommendation_name": row["recommendation_name"],
+            "recommend_product_id": int(row["recommend_product_id"]),
+            "recommend_type": row["recommend_type"],
+            "rec_success": int(row["rec_success"]),
+        }
+        context.resp = requests.post(rest_endpoint, json=payload)
+        assert context.resp.status_code == HTTP_201_CREATED
 
 
 @when('I visit the "Home Page"')
 def step_impl(context):
-    """Make a call to the base URL"""
     context.driver.get(context.base_url)
-    # Uncomment next line to take a screenshot of the web page
-    # context.driver.save_screenshot('home_page.png')
 
 
 @then('I should see "{message}" in the title')
 def step_impl(context, message):
-    """Check the document title for a message"""
     assert message in context.driver.title
 
 
@@ -63,9 +65,28 @@ def step_impl(context, element_name, text_string):
 
 @when('I select "{text}" in the "{element_name}" dropdown')
 def step_impl(context, text, element_name):
-    element_id = element_name.lower().replace(" ", "_")
-    element = Select(context.driver.find_element(By.ID, element_id))
-    element.select_by_visible_text(text)
+    base_id = element_name.lower().replace(" ", "_")
+    # Determine active tab
+    active_tab = context.driver.find_element(
+        By.CSS_SELECTOR, ".tab-pane.active"
+    ).get_attribute("id")
+
+    # Prefix based on tab
+    if "read" in active_tab:
+        element_id = f"read_{base_id}"
+    elif "update" in active_tab:
+        element_id = f"update_{base_id}"
+    elif "delete" in active_tab:
+        element_id = f"delete_{base_id}"
+    elif "create" in active_tab:
+        element_id = base_id
+    else:
+        raise Exception(f"Unknown tab: {active_tab}")
+
+    element = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.presence_of_element_located((By.ID, element_id))
+    )
+    Select(element).select_by_visible_text(text)
 
 
 @then('I should see "{text}" in the "{element_name}" dropdown')
@@ -82,9 +103,6 @@ def step_impl(context, element_name):
     assert element.get_attribute("value") == ""
 
 
-##################################################################
-# These two function simulate copy and paste
-##################################################################
 @when('I copy the "{element_name}" field')
 def step_impl(context, element_name):
     element_id = element_name.lower().replace(" ", "_")
@@ -105,18 +123,9 @@ def step_impl(context, element_name):
     element.send_keys(context.clipboard)
 
 
-##################################################################
-# This code works because of the following naming convention:
-# The buttons have an id in the html hat is the button text
-# in lowercase followed by '-btn' so the Clean button has an id of
-# id='clear-btn'. That allows us to lowercase the name and add '-btn'
-# to get the element id of any button
-##################################################################
-
-
 @when('I press the "{button}" button')
 def step_impl(context, button):
-    button_id = button.lower() + "-btn"
+    button_id = button.lower().replace(" ", "-") + "-btn"
     context.driver.find_element(By.ID, button_id).click()
 
 
@@ -136,12 +145,6 @@ def step_impl(context, name):
     assert name not in element.text
 
 
-@then('I should not see "{name}" field')
-def step_impl(context, name):
-    element = context.driver.find_element(By.ID, "search_results")
-    assert name not in element.text
-
-
 @then('I should see the message "{message}"')
 def step_impl(context, message):
     found = WebDriverWait(context.driver, context.wait_seconds).until(
@@ -150,14 +153,6 @@ def step_impl(context, message):
         )
     )
     assert found
-
-
-##################################################################
-# This code works because of the following naming convention:
-# The id field for text input in the html is the element name
-# prefixed by ID_PREFIX so the Name field has an id='pet_name'
-# We can then lowercase the name and prefix with pet_ to get the id
-##################################################################
 
 
 @then('I should see "{text_string}" in the "{element_name}" field')
@@ -179,3 +174,12 @@ def step_impl(context, element_name, text_string):
     )
     element.clear()
     element.send_keys(text_string)
+
+
+@when('I switch to the "{tab_name}" tab')
+def step_impl(context, tab_name):
+    tab_id = tab_name.lower() + "-tab"
+    context.driver.find_element(By.CSS_SELECTOR, f'a[href="#{tab_id}"]').click()
+    WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.visibility_of_element_located((By.ID, tab_id))
+    )
