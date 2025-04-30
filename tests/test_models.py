@@ -73,10 +73,12 @@ class TestRecommendation(TestCase):
         found = Recommendation.all()
         self.assertEqual(len(found), 1)
         data = Recommendation.find(recommendation.id)
-        self.assertEqual(data.product_id, recommendation.product_id)
         self.assertEqual(data.customer_id, recommendation.customer_id)
-        self.assertEqual(data.recommend_type, recommendation.recommend_type)
+        self.assertEqual(data.product_id, recommendation.product_id)
+        self.assertEqual(data.product_name, recommendation.product_name)
         self.assertEqual(data.recommend_product_id, recommendation.recommend_product_id)
+        self.assertEqual(data.recommendation_name, recommendation.recommendation_name)
+        self.assertEqual(data.recommend_type, recommendation.recommend_type)
         self.assertEqual(data.rec_success, recommendation.rec_success)
 
     # ----------------------------------------------------------
@@ -149,11 +151,11 @@ class TestRecommendation(TestCase):
     def test_find_by_recommend_type(self):
         """It should Find Recommendations by recommend_type"""
         recommendations = [
-            RecommendationFactory(recommend_type="cross-sell") for _ in range(3)
+            RecommendationFactory(recommend_type="Cross-Sell") for _ in range(3)
         ]
         for rec in recommendations:
             rec.create()
-        found = Recommendation.find_by_recommend_type("cross-sell")
+        found = Recommendation.find_by_recommend_type("Cross-Sell")
         self.assertEqual(len(found), 3)
 
     def test_find_by_recommend_product_id(self):
@@ -172,6 +174,10 @@ class TestRecommendation(TestCase):
         data = recommendation.serialize()
         self.assertEqual(data["product_id"], recommendation.product_id)
         self.assertEqual(data["customer_id"], recommendation.customer_id)
+        self.assertEqual(data["product_name"], recommendation.product_name)
+        self.assertEqual(
+            data["recommendation_name"], recommendation.recommendation_name
+        )
         self.assertEqual(data["recommend_type"], recommendation.recommend_type)
         self.assertEqual(
             data["recommend_product_id"], recommendation.recommend_product_id
@@ -185,6 +191,10 @@ class TestRecommendation(TestCase):
         recommendation.deserialize(data)
         self.assertEqual(recommendation.product_id, data["product_id"])
         self.assertEqual(recommendation.customer_id, data["customer_id"])
+        self.assertEqual(recommendation.product_name, data["product_name"])
+        self.assertEqual(
+            recommendation.recommendation_name, data["recommendation_name"]
+        )
         self.assertEqual(recommendation.recommend_type, data["recommend_type"])
         self.assertEqual(
             recommendation.recommend_product_id, data["recommend_product_id"]
@@ -226,14 +236,18 @@ class TestRecommendation(TestCase):
         data = {
             "product_id": 100,
             "customer_id": 200,
-            "recommend_type": "up-sell",
+            "product_name": "Shampoo",
+            "recommendation_name": "Conditioner",
+            "recommend_type": "Up-Sell",
             "recommend_product_id": 300,
             "rec_success": 5,
         }
         recommendation.deserialize(data)
         self.assertEqual(recommendation.product_id, 100)
         self.assertEqual(recommendation.customer_id, 200)
-        self.assertEqual(recommendation.recommend_type, "up-sell")
+        self.assertEqual(recommendation.product_name, "Shampoo")
+        self.assertEqual(recommendation.recommendation_name, "Conditioner")
+        self.assertEqual(recommendation.recommend_type, "Up-Sell")
         self.assertEqual(recommendation.recommend_product_id, 300)
         self.assertEqual(recommendation.rec_success, 5)
 
@@ -243,7 +257,9 @@ class TestRecommendation(TestCase):
         data = {
             "product_id": 100,
             "customer_id": 200,
-            # Missing recommend_type
+            "product_name": "Shampoo",
+            "recommendation_name": "Conditioner",
+            # "recommend_type" is intentionally omitted
             "recommend_product_id": 300,
             "rec_success": 5,
         }
@@ -267,7 +283,9 @@ class TestRecommendation(TestCase):
         bad_data = {
             "product_id": "wrong_type",  # product_id should be int
             "customer_id": 200,
-            "recommend_type": "up-sell",
+            "recommend_type": "Up-Sell",
+            "product_name": "Shampoo",
+            "recommendation_name": "Conditioner",
             "recommend_product_id": 300,
             "rec_success": 5,
         }

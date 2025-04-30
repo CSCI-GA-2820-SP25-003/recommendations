@@ -15,6 +15,9 @@ help: ## Display this help.
 .PHONY: all
 all: help
 
+shell:
+	@flask shell
+
 ##@ Development
 
 .PHONY: clean

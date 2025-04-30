@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recommendation Demo RESTful Service</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="static/images/newapp-icon.png">
+  <link rel="stylesheet" href="static/css/cerulean_bootstrap.min.css">
+  <style>
+    .tab-content > .tab-pane {
+      display: none;
+    }
+    .tab-content > .active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>Product Recommendations REST API Service</h1>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="form-tabs">
+      <li class="active"><a href="#create-tab" data-toggle="tab">Create</a></li>
+      <li><a href="#read-tab" data-toggle="tab">Read</a></li>
+      <li><a href="#update-tab" data-toggle="tab">Update</a></li>
+      <li><a href="#delete-tab" data-toggle="tab">Delete</a></li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content">
+
+      <!-- CREATE -->
+      <div id="create-tab" class="tab-pane active operation-form">
+        <h3>Create Recommendation</h3>
+        <div class="well form-horizontal">
+          <input type="hidden" id="create_id">
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_id">Product ID*:</label>
+            <div class="col-sm-6">
+              <input type="text" class="form-control" id="product_id" placeholder="Enter product ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="customer_id">Customer ID*:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="customer_id" placeholder="Enter customer ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_name">Product Name*:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="product_name" placeholder="Enter product name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommendation_name">Recommendation Name*:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="recommendation_name" placeholder="Enter recommendation name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_product_id">Recommended Product ID*:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="recommend_product_id" placeholder="Enter recommended product ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_type">Recommendation Type*:</label>
+            <div class="col-sm-10">
+              <select class="form-control" id="recommend_type">
+                <option value="Select" selected>Select</option>
+                <option value="Up-Sell">Up-Sell</option>
+                <option value="Up-Sell">Down-Sell</option>
+                <option value="Cross-Sell">Cross-Sell</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="rec_success">Success Rate*:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="rec_success" placeholder="Enter initial success rate (0 - 100)">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="submit" class="btn btn-secondary" id="clear-btn">Clear</button>
+              <button type="submit" class="btn btn-success" id="create-btn">Create</button>
+              <button type="submit" class="btn btn-info" id="list-btn">List Items</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- READ -->
+      <div id="read-tab" class="tab-pane operation-form">
+        <h3>Read Recommendations</h3>
+        <div class="well form-horizontal">
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="read_id">Internal ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_id" placeholder="Search by internal database ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="submit" class="btn btn-success" id="retrieve-btn">Retrieve by ID</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_id">Product ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_product_id" placeholder="Filter by product ID">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="customer_id">Customer ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_customer_id" placeholder="Filter by customer ID">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_product_id">Recommended Product ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_recommend_product_id" placeholder="Filter by recommended product ID">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_type">Recommendation Type:</label>
+            <div class="col-sm-10">
+              <select class="form-control" id="read_recommend_type">
+                <option value="" selected>Any</option>
+                <option value="Up-Sell">Up-Sell</option>
+                <option value="Down-Sell">Down-Sell</option>
+                <option value="Cross-Sell">Cross-Sell</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_name">Product Name:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_product_name" placeholder="Filter by product name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommendation_name">Recommendation Name:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="read_recommendation_name" placeholder="Filter by recommendation name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="rec_success_range">Success Rate Range:</label>
+            <div class="col-sm-5">
+              <input type="number" class="form-control" id="rec_success_min" placeholder="Min (0)" min="0" max="100">
+            </div>
+            <div class="col-sm-5">
+              <input type="number" class="form-control" id="rec_success_max" placeholder="Max (100)" min="0" max="100">
+            </div>
+          </div>               
+
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="submit" class="btn btn-secondary" id="clear-read-btn">Clear</button>
+              <button type="submit" class="btn btn-warning" id="filter-search-btn">Search with Filters</button>
+              <button type="submit" class="btn btn-info" id="list-read-btn">List Items</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPDATE -->
+      <div id="update-tab" class="tab-pane operation-form">
+        <h3>Update Recommendation</h3>
+        <div class="well form-horizontal">
+
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="update_id">Internal ID*:</label>
+            <div class="col-sm-6">
+              <input type="text" class="form-control" id="update_id" placeholder="Enter internal ID for update">
+            </div>
+          </div>          
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_id">Product ID:</label>
+            <div class="col-sm-6">
+              <input type="text" class="form-control" id="update_product_id" placeholder="Enter product ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="customer_id">Customer ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="update_customer_id" placeholder="Enter customer ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="product_name">Product Name:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="update_product_name" placeholder="Enter product name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommendation_name">Recommendation Name:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="update_recommendation_name" placeholder="Enter recommendation name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_product_id">Recommended Product ID:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="update_recommend_product_id" placeholder="Enter recommended product ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="recommend_type">Recommendation Type:</label>
+            <div class="col-sm-10">
+              <select class="form-control" id="update_recommend_type">
+                <option value="Select" selected>Select</option>
+                <option value="Up-Sell">Up-Sell</option>
+                <option value="Up-Sell">Down-Sell</option>
+                <option value="Cross-Sell">Cross-Sell</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="rec_success">Success Rate:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="update_rec_success" placeholder="Enter initial success rate (0 - 100)">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="submit" class="btn btn-secondary" id="clear-update-btn">Clear</button>
+              <button type="submit" class="btn btn-warning" id="update-btn">Update</button>
+              <button type="submit" class="btn btn-info" id="list-update-btn">List Items</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE -->
+      <div id="delete-tab" class="tab-pane operation-form">
+        <h3>Delete Recommendation</h3>
+        <div class="well form-horizontal">
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="delete_id">Recommendation ID*:</label>
+            <div class="col-sm-10">
+              <input id="delete_id" class="form-control" type="text" placeholder="Enter internal ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="submit" class="btn btn-secondary" id="clear-delete-btn">Clear</button>
+              <button type="submit" class="btn btn-danger" id="delete-id-btn">Delete by ID</button>
+              <button type="submit" class="btn btn-info" id="list-delete-btn">List Items</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- /.tab-content -->
+
+    <!-- Flash Message -->
+    <div id="flash_container" class="alert alert-info alert-dismissible fade in" role="alert" style="display: none; margin-top: 20px;">
+      <button type="button" class="close" onclick="$('#flash_container').hide();">&times;</button>
+      <span id="flash_message"></span>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="table-responsive col-md-12" id="search_results">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product ID</th>
+            <th>Customer ID</th>
+            <th>Product Name</th>
+            <th>Recommendation Name</th>
+            <th>Recommended Product ID</th>
+            <th>Recommendation Type</th>
+            <th>Success Rate (%)</th>
+          </tr>
+        </thead>
+        <tbody id="results_body">
+          <!-- dynamically inserted rows -->
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      <br><br>
+      <p>&copy; NYU DevOps 2025</p>
+    </footer>
+
+  </div>
+
+  <script src="static/js/jquery-3.6.0.min.js"></script>
+  <script src="static/js/bootstrap.min.js"></script>
+  <script src="static/js/rest_api.js"></script>
+</body>
+</html>

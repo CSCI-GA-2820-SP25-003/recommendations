@@ -35,7 +35,7 @@ def create_app():
 
     # Initialize Plugins
     # pylint: disable=import-outside-toplevel
-    from service.models import db
+    from service.models import db, seed_data
 
     db.init_app(app)
 
@@ -49,6 +49,7 @@ def create_app():
             # Recreate schema in case of name changes
             db.drop_all()
             db.create_all()
+            seed_data()
         except Exception as error:  # pylint: disable=broad-except
             app.logger.critical("%s: Cannot continue", error)
             # gunicorn requires exit code 4 to stop spawning workers when they die

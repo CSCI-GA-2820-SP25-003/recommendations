@@ -92,8 +92,10 @@ class TestRecommendationService(TestCase):
         """It should call the home page"""
         response = self.client.get("/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.get_json()
-        self.assertEqual(data["name"], "Recommendation Demo REST API Service")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(b"<html", response.data)  # crude check for HTML content
+        # data = response.get_json()
+        # self.assertEqual(data["name"], "Recommendation Demo REST API Service")
 
     def test_health(self):
         """It should be healthy"""
@@ -208,7 +210,7 @@ class TestRecommendationService(TestCase):
         logging.debug(new_recommendation)
 
         # Modify some fields
-        new_recommendation["recommend_type"] = "cross-sell"
+        new_recommendation["recommend_type"] = "Cross-Sell"
         new_recommendation["rec_success"] = 99
 
         response = self.client.put(
@@ -218,7 +220,7 @@ class TestRecommendationService(TestCase):
 
         # Verify the update
         updated_recommendation = response.get_json()
-        self.assertEqual(updated_recommendation["recommend_type"], "cross-sell")
+        self.assertEqual(updated_recommendation["recommend_type"], "Cross-Sell")
         self.assertEqual(updated_recommendation["rec_success"], 99)
 
         # Ensure the other fields remain unchanged
@@ -267,7 +269,7 @@ class TestRecommendationService(TestCase):
         logging.debug(new_recommendation)
 
         # Update the recommend_type
-        new_recommendation["recommend_type"] = "up-sell"
+        new_recommendation["recommend_type"] = "Up-Sell"
 
         response = self.client.put(
             f"{BASE_URL}/{new_recommendation['id']}", json=new_recommendation
@@ -275,7 +277,7 @@ class TestRecommendationService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         updated_recommendation = response.get_json()
-        self.assertEqual(updated_recommendation["recommend_type"], "up-sell")
+        self.assertEqual(updated_recommendation["recommend_type"], "Up-Sell")
 
     def test_update_recommendation_not_found(self):
         """It should return 404 when updating a non-existent recommendation"""
@@ -366,7 +368,7 @@ class TestRecommendationService(TestCase):
         data = response.get_json()
         self.assertEqual(
             data["error"],
-            "Invalid recommend_type. Must be one of ['up-sell', 'down-sell', 'cross-sell']",
+            "Invalid recommend_type. Must be one of ['Up-Sell', 'Down-Sell', 'Cross-Sell']",
         )
 
     def test_invalid_recommend_product_id_query(self):

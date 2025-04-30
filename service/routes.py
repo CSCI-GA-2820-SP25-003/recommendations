@@ -40,18 +40,22 @@ def health_check():
 ######################################################################
 # GET INDEX
 ######################################################################
+# @app.route("/")
+# def index():
+#     """Root URL response"""
+#     app.logger.info("Request for Root URL")
+#     return (
+#         jsonify(
+#             name="Recommendation Demo REST API Service",
+#             version="1.0",
+#             paths=url_for("list_recommendations", _external=True),
+#         ),
+#         status.HTTP_200_OK,
+#     )
 @app.route("/")
 def index():
-    """Root URL response"""
-    app.logger.info("Request for Root URL")
-    return (
-        jsonify(
-            name="Recommendation Demo REST API Service",
-            version="1.0",
-            paths=url_for("list_recommendations", _external=True),
-        ),
-        status.HTTP_200_OK,
-    )
+    """Base URL for our service"""
+    return app.send_static_file("index.html")
 
 
 ######################################################################
@@ -156,9 +160,13 @@ def list_recommendations():
     customer_id = request.args.get("customer_id")
     recommend_type = request.args.get("recommend_type")
     recommend_product_id = request.args.get("recommend_product_id")
+    product_name = request.args.get("product_name")
+    recommendation_name = request.args.get("recommendation_name")
+    rec_success_min = request.args.get("rec_success_min")
+    rec_success_max = request.args.get("rec_success_max")
 
     query = Recommendation.query
-    valid_recommend_types = ["up-sell", "down-sell", "cross-sell"]
+    valid_recommend_types = ["Up-Sell", "Down-Sell", "Cross-Sell"]
 
     if product_id:
         if not product_id.isdigit():
@@ -171,10 +179,7 @@ def list_recommendations():
         query = query.filter(Recommendation.customer_id == int(customer_id))
 
     if recommend_type:
-        if (
-            not isinstance(recommend_type, str)
-            or recommend_type not in valid_recommend_types
-        ):
+        if recommend_type not in valid_recommend_types:
             return (
                 jsonify(
                     error=f"Invalid recommend_type. Must be one of {valid_recommend_types}"
@@ -193,9 +198,32 @@ def list_recommendations():
             Recommendation.recommend_product_id == int(recommend_product_id)
         )
 
-    recommendations = query.all()
+    if product_name:
+        query = query.filter(Recommendation.product_name == product_name)
 
-    # Serialize and return the results
+    if recommendation_name:
+        query = query.filter(Recommendation.recommendation_name == recommendation_name)
+
+    if rec_success_min and rec_success_max:
+        if not rec_success_min.isdigit() or not rec_success_max.isdigit():
+            return (
+                jsonify(error="Invalid range :()"),
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        min_val = int(rec_success_min)
+        max_val = int(rec_success_max)
+        if min_val > max_val:
+            return (
+                jsonify(error="rec_success_min cannot be greater than rec_success_max"),
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        query = query.filter(
+            Recommendation.rec_success >= min_val, Recommendation.rec_success <= max_val
+        )
+
+    recommendations = query.all()
     results = [recommendation.serialize() for recommendation in recommendations]
     return jsonify(results), status.HTTP_200_OK
 
@@ -229,28 +257,46 @@ def get_recommendations(recommendation_id):
 ######################################################################
 # UPDATE A RECOMMENDATION
 ######################################################################
-@app.route("/recommendations/<int:recommendations_id>", methods=["PUT"])
-def update_recommendations(recommendations_id):
+@app.route("/recommendations/<int:recommendation_id>", methods=["PUT"])
+def update_recommendations(recommendation_id):
     """
     Update a Recommendation
-    This endpoint will update a Recommendation based the body that is posted
+    This endpoint will update a Recommendation based on provided fields
     """
-    app.logger.info("Request to update recommendations with id: %d", recommendations_id)
+    app.logger.info("Request to update recommendation with id: %d", recommendation_id)
     check_content_type("application/json")
 
-    recommendations = Recommendation.find(recommendations_id)
-    if not recommendations:
-        error(
+    recommendation = Recommendation.find(recommendation_id)
+    if not recommendation:
+        abort(
             status.HTTP_404_NOT_FOUND,
-            f"Recommendation with id: '{recommendations_id}' was not found.",
+            f"Recommendation with id: '{recommendation_id}' was not found.",
         )
 
-    recommendations.deserialize(request.get_json())
-    recommendations.id = recommendations_id
-    recommendations.update()
+    data = request.get_json()
+    if not data:
+        abort(status.HTTP_400_BAD_REQUEST, "No data provided for update.")
 
-    app.logger.info("Recommendation with ID: %d updated.", recommendations.id)
-    return jsonify(recommendations.serialize()), status.HTTP_200_OK
+    # Update only fields that are present
+    if "customer_id" in data:
+        recommendation.customer_id = data["customer_id"]
+    if "product_id" in data:
+        recommendation.product_id = data["product_id"]
+    if "product_name" in data:
+        recommendation.product_name = data["product_name"]
+    if "recommendation_name" in data:
+        recommendation.recommendation_name = data["recommendation_name"]
+    if "recommend_product_id" in data:
+        recommendation.recommend_product_id = data["recommend_product_id"]
+    if "recommend_type" in data:
+        recommendation.recommend_type = data["recommend_type"]
+    if "rec_success" in data:
+        recommendation.rec_success = data["rec_success"]
+
+    recommendation.update()
+
+    app.logger.info("Recommendation with ID: %d updated.", recommendation.id)
+    return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
 @app.route(
@@ -323,12 +369,18 @@ def delete_recommendations(recommendation_id):
     Delete a Recommendation
     This endpoint will delete a Recommendation based the id specified in the path
     """
-    app.logger.info("Request to delete recommendation with id: %d", recommendation_id)
     recommendation = Recommendation.find(recommendation_id)
-    if recommendation:
-        recommendation.delete()
-    app.logger.info("Recommendation with ID: %d delete complete.", recommendation_id)
-    return "", status.HTTP_204_NO_CONTENT
+    if not recommendation:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Recommendation with id '{recommendation_id}' was not found.",
+        )
+
+    recommendation.delete()
+    return (
+        jsonify(message="Recommendation deleted successfully."),
+        status.HTTP_204_NO_CONTENT,
+    )
 
 
 ######################################################################
