@@ -75,10 +75,20 @@ Feature: Recommendation Service
     And I press the "Update" button
     Then I should see the message "Update success!"
 
+  Scenario: Like a Recommendation
+    Given the following recommendations
+        | id | product_id | customer_id | product_name | recommendation_name | recommend_product_id | recommend_type | rec_success |
+        | 1  | 1          | 101         | cake         | cookie              | 123                  | Cross-Sell     | 1           |
+    When I visit the "Home Page"
+    And I switch to the "Update" tab
+    And I set the "update_id" to "57"
+    And I press the "Like" button
+    Then I should see the message "Liked! Success rate increased."
+
   Scenario: Delete a Recommendation
     When I visit the "Home Page"
     And I switch to the "Delete" tab
-    And I set the "delete_id" to "53"
+    And I set the "delete_id" to "59"
     And I press the "Delete ID" button
     Then I should see the message "Recommendation deleted successfully."
     

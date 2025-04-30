@@ -581,7 +581,7 @@ class TestRecommendationService(TestCase):
 
         # Like the recommendation
         like_url = f"{BASE_URL}/{new_recommendation['id']}/like"
-        response = self.client.patch(like_url)
+        response = self.client.put(like_url)  # Changed from PATCH to PUT
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that rec_success was incremented
@@ -590,7 +590,7 @@ class TestRecommendationService(TestCase):
 
     def test_like_recommendation_not_found(self):
         """It should return 404 when liking a non-existent recommendation"""
-        response = self.client.patch(f"{BASE_URL}/9999/like")
+        response = self.client.put(f"{BASE_URL}/9999/like")  # Changed from PATCH to PUT
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_with_all_filters(self):
@@ -608,3 +608,44 @@ class TestRecommendationService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertEqual(len(data), 1)
+
+    def test_dislike_recommendation(self):
+        """It should decrement rec_success by 1"""
+        recommendation = Recommendation(
+            product_id=2,
+            customer_id=202,
+            product_name="vanilla",
+            recommendation_name="milkshake",
+            recommend_product_id=301,
+            recommend_type="Up-Sell",
+            rec_success=3,
+        )
+        recommendation.create()
+
+        resp = self.client.put(f"/recommendations/{recommendation.id}/dislike")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["rec_success"] == 2
+
+    def test_dislike_does_not_go_below_zero(self):
+        """It should not decrement below zero"""
+        recommendation = Recommendation(
+            product_id=3,
+            customer_id=303,
+            product_name="lemon",
+            recommendation_name="lime",
+            recommend_product_id=404,
+            recommend_type="Down-Sell",
+            rec_success=0,
+        )
+        recommendation.create()
+
+        resp = self.client.put(f"/recommendations/{recommendation.id}/dislike")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["rec_success"] == 0
+
+    def test_dislike_recommendation_not_found(self):
+        """It should return 404 when disliking non-existent"""
+        resp = self.client.put("/recommendations/9999/dislike")
+        assert resp.status_code == 404
