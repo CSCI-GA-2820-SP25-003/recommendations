@@ -166,8 +166,8 @@ class RecommendationResource(Resource):
     @api.doc("update_recommendation")
     @api.expect(recommendation_model)
     @api.marshal_with(recommendation_model)
-    def put(self, id):
-        recommendation = Recommendation.find(id)
+    def put(self, recommendation_id):
+        recommendation = Recommendation.find(recommendation_id)
         if not recommendation:
             abort(status.HTTP_404_NOT_FOUND, f"Recommendation with id '{id}' was not found.")
 
