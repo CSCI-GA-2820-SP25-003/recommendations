@@ -18,7 +18,7 @@ ID_PREFIX = ""
 @given("the following recommendations")
 def step_impl(context):
     """Delete all Recommendations and load new ones"""
-    rest_endpoint = f"{context.base_url}/recommendations"
+    rest_endpoint = f"{context.base_url}/api/recommendations"
     context.resp = requests.get(rest_endpoint)
     assert context.resp.status_code == HTTP_200_OK
     for recommendation in context.resp.json():

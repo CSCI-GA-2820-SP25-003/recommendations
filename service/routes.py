@@ -65,7 +65,8 @@ def index():
 # DELETE A RECOMMENDATION
 ######################################################################
 @app.route(
-    "/recommendations/<int:product_id>/<int:recommend_product_id>", methods=["DELETE"]
+    "/api/recommendations/<int:product_id>/<int:recommend_product_id>",
+    methods=["DELETE"],
 )
 def delete_recommendation(product_id, recommend_product_id):
     """
@@ -116,7 +117,7 @@ def delete_recommendation(product_id, recommend_product_id):
 ######################################################################
 # CREATE A NEW RECOMMENDATION
 ######################################################################
-@app.route("/recommendations", methods=["POST"])
+@app.route("/api/recommendations", methods=["POST"])
 def create_recommendations():
     """
     Create a Recommendation
@@ -150,7 +151,7 @@ def create_recommendations():
 ######################################################################
 # LIST ALL RECOMMENDATIONS
 ######################################################################
-@app.route("/recommendations", methods=["GET"])
+@app.route("/api/recommendations", methods=["GET"])
 def list_recommendations():  # pylint: disable=too-many-branches, too-many-return-statements
     """Returns all of the Recommendations, with optional filtering"""
     app.logger.info("Request for recommendation list with filters")
@@ -231,7 +232,7 @@ def list_recommendations():  # pylint: disable=too-many-branches, too-many-retur
 ######################################################################
 # READ A RECOMMENDATION
 ######################################################################
-@app.route("/recommendations/<int:recommendation_id>", methods=["GET"])
+@app.route("/api/recommendations/<int:recommendation_id>", methods=["GET"])
 def get_recommendations(recommendation_id):
     """
     Retrieve a single Recommendation
@@ -257,7 +258,7 @@ def get_recommendations(recommendation_id):
 ######################################################################
 # UPDATE A RECOMMENDATION
 ######################################################################
-@app.route("/recommendations/<int:recommendation_id>", methods=["PUT"])
+@app.route("/api/recommendations/<int:recommendation_id>", methods=["PUT"])
 def update_recommendations(recommendation_id):
     """
     Update a Recommendation
@@ -300,7 +301,7 @@ def update_recommendations(recommendation_id):
 
 
 @app.route(
-    "/recommendations/<int:recommendation_id>/link/<int:recommend_product_id>",
+    "/api/recommendations/<int:recommendation_id>/link/<int:recommend_product_id>",
     methods=["PUT"],
 )
 def link_recommendation_product(recommendation_id, recommend_product_id):
@@ -332,7 +333,7 @@ def link_recommendation_product(recommendation_id, recommend_product_id):
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
-@app.route("/recommendations/<int:recommendation_id>/like", methods=["PUT"])
+@app.route("/api/recommendations/<int:recommendation_id>/like", methods=["PUT"])
 def like_recommendation(recommendation_id):
     """Increments the success rate of a recommendation by 1"""
     app.logger.info("Request to LIKE recommendation with id [%s]", recommendation_id)
@@ -351,7 +352,7 @@ def like_recommendation(recommendation_id):
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
-@app.route("/recommendations/<int:recommendation_id>/dislike", methods=["PUT"])
+@app.route("/api/recommendations/<int:recommendation_id>/dislike", methods=["PUT"])
 def dislike_recommendation(recommendation_id):
     """
     Dislike a recommendation (decrement its success score by 1)
@@ -376,7 +377,7 @@ def dislike_recommendation(recommendation_id):
 ######################################################################
 #  DELETE A RECOMMENDATION
 ######################################################################
-@app.route("/recommendations/<int:recommendation_id>", methods=["DELETE"])
+@app.route("/api/recommendations/<int:recommendation_id>", methods=["DELETE"])
 def delete_recommendations(recommendation_id):
     """
     Delete a Recommendation
