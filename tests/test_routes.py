@@ -31,7 +31,7 @@ from .factories import RecommendationFactory
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
-BASE_URL = "/recommendations"
+BASE_URL = "/api/recommendations"
 
 
 ######################################################################
@@ -199,7 +199,7 @@ class TestRecommendationService(TestCase):
     def test_invalid_range_and_string_filters(self):
         """It should return 400 for invalid success range, even if string filters are provided"""
         response = self.client.get(
-            "/recommendations?product_name=cake&recommendation_name=cookie&rec_success_min=90&rec_success_max=10"
+            "/api/recommendations?product_name=cake&recommendation_name=cookie&rec_success_min=90&rec_success_max=10"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.get_json()
@@ -210,7 +210,7 @@ class TestRecommendationService(TestCase):
     def test_invalid_success_range_non_digit(self):
         """It should return 400 if rec_success_min or max is not a digit"""
         response = self.client.get(
-            "/recommendations?rec_success_min=low&rec_success_max=high"
+            "/api/recommendations?rec_success_min=low&rec_success_max=high"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = response.get_json()
@@ -249,11 +249,11 @@ class TestRecommendationService(TestCase):
             },
         ]
         for rec in recs:
-            self.client.post("/recommendations", json=rec)
+            self.client.post("/api/recommendations", json=rec)
 
         # Filter between 20 and 80
         response = self.client.get(
-            "/recommendations?rec_success_min=20&rec_success_max=80"
+            "/api/recommendations?rec_success_min=20&rec_success_max=80"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
@@ -363,7 +363,7 @@ class TestRecommendationService(TestCase):
         recommendation.create()
 
         response = self.client.put(
-            f"/recommendations/{recommendation.id}",
+            f"/api/recommendations/{recommendation.id}",
             content_type="application/json",
             data=json.dumps({}),  # Send empty JSON to hit `if not data`
         )
@@ -622,7 +622,7 @@ class TestRecommendationService(TestCase):
         )
         recommendation.create()
 
-        resp = self.client.put(f"/recommendations/{recommendation.id}/dislike")
+        resp = self.client.put(f"/api/recommendations/{recommendation.id}/dislike")
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["rec_success"] == 2
@@ -640,12 +640,12 @@ class TestRecommendationService(TestCase):
         )
         recommendation.create()
 
-        resp = self.client.put(f"/recommendations/{recommendation.id}/dislike")
+        resp = self.client.put(f"/api/recommendations/{recommendation.id}/dislike")
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["rec_success"] == 0
 
     def test_dislike_recommendation_not_found(self):
         """It should return 404 when disliking non-existent"""
-        resp = self.client.put("/recommendations/9999/dislike")
+        resp = self.client.put("/api/recommendations/9999/dislike")
         assert resp.status_code == 404

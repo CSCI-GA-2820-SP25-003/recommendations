@@ -44,7 +44,7 @@ $(function () {
     function listAllRecommendations() {
         let ajax = $.ajax({
             type: "GET",
-            url: "/recommendations",
+            url: "/api/recommendations",
             contentType: "application/json",
         });
 
@@ -89,7 +89,7 @@ $(function () {
 
         $.ajax({
             type: "POST",
-            url: "/recommendations",
+            url: "/api/recommendations",
             contentType: "application/json",
             data: JSON.stringify(data),
         }).done(function(res){
@@ -110,7 +110,7 @@ $(function () {
 
         $.ajax({
             type: "GET",
-            url: `/recommendations/${recommendation_id}`,
+            url: `/api/recommendations/${recommendation_id}`,
             contentType: "application/json",
         }).done(function(res){
             $("#search_results tbody").empty();
@@ -181,7 +181,7 @@ $(function () {
     
         $.ajax({
             type: "GET",
-            url: `/recommendations${queryString}`,
+            url: `/api/recommendations${queryString}`,
             contentType: "application/json",
         }).done(function(res){
             $("#search_results tbody").empty();
@@ -236,7 +236,7 @@ $(function () {
 
         $.ajax({
             type: "PUT",
-            url: `/recommendations/${id}`,
+            url: `/api/recommendations/${id}`,
             contentType: "application/json",
             data: JSON.stringify(data),
         }).done(function(res){
@@ -260,7 +260,7 @@ $(function () {
 
         $.ajax({
             type: "PUT",
-            url: `/recommendations/${id}/like`,
+            url: `/api/recommendations/${id}/like`,
             contentType: "application/json",
         }).done(function(res){
             $("#update_rec_success").val(res.rec_success); // optionally update the success rate
@@ -279,7 +279,7 @@ $(function () {
     
         $.ajax({
             type: "PUT",
-            url: `/recommendations/${id}/dislike`,
+            url: `/api/recommendations/${id}/dislike`,
             contentType: "application/json",
         }).done(function (res) {
             flash_message("Disliked! Success rate decreased.");
@@ -299,7 +299,7 @@ $(function () {
 
         $.ajax({
             type: "DELETE",
-            url: `/recommendations/${id}`,
+            url: `/api/recommendations/${id}`,
             contentType: "application/json",
         }).done(function(res){
             $("#delete_id").val("");
