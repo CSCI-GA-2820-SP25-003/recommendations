@@ -1,0 +1,88 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: lint-check
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: run-flake8
+      image: python:3.11-slim
+      workingDir: /workspace/source
+      script: |
+        pip install flake8
+        flake8 service tests
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: unit-test
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: run-pytest
+      image: python:3.11-slim
+      workingDir: /workspace/source
+      script: |
+        pip install -r requirements.txt
+        pip install pytest
+        pytest
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-image
+spec:
+  params:
+    - name: IMAGE
+  workspaces:
+    - name: source
+  steps:
+    - name: build
+      image: gcr.io/kaniko-project/executor:latest
+      workingDir: /workspace/source
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker/
+      script: |
+        /kaniko/executor \
+          --dockerfile=Dockerfile \
+          --destination=$(params.IMAGE) \
+          --context=dir://.
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-to-cluster
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: deploy
+      image: bitnami/kubectl:latest
+      workingDir: /workspace/source
+      script: |
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-bdd-tests
+spec:
+  params:
+    - name: BASE_URL
+  workspaces:
+    - name: source
+  steps:
+    - name: behave
+      image: python:3.11-slim
+      workingDir: /workspace/source
+      env:
+        - name: BASE_URL
+          value: $(params.BASE_URL)
+      script: |
+        pip install -r requirements.txt
+        pip install behave selenium
+        behave

@@ -1,0 +1,12 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: recommendations-listener
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: github-push-trigger
+      bindings:
+        - ref: github-binding
+      template:
+        ref: github-template

@@ -1,0 +1,25 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-template
+spec:
+  params:
+    - name: gitrevision
+    - name: gitrepositoryurl
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: recommendations-pipeline-run-
+      spec:
+        pipelineRef:
+          name: recommendations-pipeline
+        workspaces:
+          - name: shared-workspace
+            persistentVolumeClaim:
+              claimName: shared-pvc
+        params:
+          - name: gitrevision
+            value: $(params.gitrevision)
+          - name: gitrepositoryurl
+            value: $(params.gitrepositoryurl)
