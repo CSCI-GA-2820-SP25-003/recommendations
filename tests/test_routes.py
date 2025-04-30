@@ -21,6 +21,7 @@ TestRecommendation API Service Test Suite
 # pylint: disable=duplicate-code
 import os
 import logging
+import json
 from unittest import TestCase
 from wsgi import app
 from service.common import status
@@ -195,6 +196,70 @@ class TestRecommendationService(TestCase):
         response = self.client.get(f"{BASE_URL}?unknown=123")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_invalid_range_and_string_filters(self):
+        """It should return 400 for invalid success range, even if string filters are provided"""
+        response = self.client.get(
+            "/recommendations?product_name=cake&recommendation_name=cookie&rec_success_min=90&rec_success_max=10"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn(
+            "rec_success_min cannot be greater than rec_success_max", data["error"]
+        )
+
+    def test_invalid_success_range_non_digit(self):
+        """It should return 400 if rec_success_min or max is not a digit"""
+        response = self.client.get(
+            "/recommendations?rec_success_min=low&rec_success_max=high"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data = response.get_json()
+        self.assertIn("Invalid range", data["error"])
+
+    def test_success_range_filter(self):
+        """It should return recommendations within a given success rate range"""
+        # Create multiple recommendations with varying success rates
+        recs = [
+            {
+                "product_id": 1,
+                "customer_id": 101,
+                "product_name": "a",
+                "recommendation_name": "a1",
+                "recommend_product_id": 111,
+                "recommend_type": "Cross-Sell",
+                "rec_success": 10,
+            },
+            {
+                "product_id": 2,
+                "customer_id": 102,
+                "product_name": "b",
+                "recommendation_name": "b1",
+                "recommend_product_id": 112,
+                "recommend_type": "Up-Sell",
+                "rec_success": 50,
+            },
+            {
+                "product_id": 3,
+                "customer_id": 103,
+                "product_name": "c",
+                "recommendation_name": "c1",
+                "recommend_product_id": 113,
+                "recommend_type": "Down-Sell",
+                "rec_success": 90,
+            },
+        ]
+        for rec in recs:
+            self.client.post("/recommendations", json=rec)
+
+        # Filter between 20 and 80
+        response = self.client.get(
+            "/recommendations?rec_success_min=20&rec_success_max=80"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["rec_success"], 50)
+
     # ----------------------------------------------------------
     # TEST UPDATE RECOMMENDATION
     # ----------------------------------------------------------
@@ -284,6 +349,27 @@ class TestRecommendationService(TestCase):
         response = self.client.put(f"{BASE_URL}/9999", json={})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_update_with_no_data(self):
+        """It should return 400 BAD REQUEST when no data is provided"""
+        recommendation = Recommendation(
+            product_id=1,
+            customer_id=100,
+            product_name="item",
+            recommendation_name="item2",
+            recommend_product_id=2,
+            recommend_type="Cross-Sell",
+            rec_success=1,
+        )
+        recommendation.create()
+
+        response = self.client.put(
+            f"/recommendations/{recommendation.id}",
+            content_type="application/json",
+            data=json.dumps({}),  # Send empty JSON to hit `if not data`
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("No data provided", response.get_data(as_text=True))
+
     # ----------------------------------------------------------
     # TEST DELETE RECOMMENDATION
     # ----------------------------------------------------------
@@ -315,7 +401,7 @@ class TestRecommendationService(TestCase):
 
     def test_delete_recommendation_not_found(self):
         """It should return 404 when deleting non-existent recommendation"""
-        response = self.client.delete(f"{BASE_URL}/9999/8888")
+        response = self.client.delete(f"{BASE_URL}/9999")  # 9999 does not exist
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     # ----------------------------------------------------------
