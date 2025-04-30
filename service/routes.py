@@ -151,7 +151,7 @@ def create_recommendations():
 # LIST ALL RECOMMENDATIONS
 ######################################################################
 @app.route("/recommendations", methods=["GET"])
-def list_recommendations():
+def list_recommendations():  # pylint: disable=too-many-branches, too-many-return-statements
     """Returns all of the Recommendations, with optional filtering"""
     app.logger.info("Request for recommendation list with filters")
 
@@ -332,13 +332,10 @@ def link_recommendation_product(recommendation_id, recommend_product_id):
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
 
-@app.route("/recommendations/<int:recommendation_id>/like", methods=["PATCH"])
+@app.route("/recommendations/<int:recommendation_id>/like", methods=["PUT"])
 def like_recommendation(recommendation_id):
-    """
-    Like a recommendation
-    This endpoint will increase the success count (rec_success) of a recommendation
-    """
-    app.logger.info("Request to like recommendation with id: %d", recommendation_id)
+    """Increments the success rate of a recommendation by 1"""
+    app.logger.info("Request to LIKE recommendation with id [%s]", recommendation_id)
 
     recommendation = Recommendation.find(recommendation_id)
     if not recommendation:
@@ -347,15 +344,8 @@ def like_recommendation(recommendation_id):
             f"Recommendation with id '{recommendation_id}' was not found.",
         )
 
-    # Increment the recommendation success counter
     recommendation.rec_success += 1
     recommendation.update()
-
-    app.logger.info(
-        "Recommendation %d liked, success count increased to %d",
-        recommendation_id,
-        recommendation.rec_success,
-    )
 
     return jsonify(recommendation.serialize()), status.HTTP_200_OK
 
